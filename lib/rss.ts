@@ -1,6 +1,6 @@
 import { XMLParser } from 'fast-xml-parser'
-import type { Source } from './sources'
-import { sessionAt, type Session } from './market'
+import type { Source } from './sources.js'
+import { sessionAt, type Session } from './market.js'
 
 export type FeedItem = {
   /** Stable per item, so a brief can cite exactly what it read. */

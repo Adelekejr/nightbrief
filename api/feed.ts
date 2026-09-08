@@ -1,7 +1,7 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node'
-import { SOURCES } from '../lib/sources'
-import { fetchSource, type FeedItem, type SourceResult } from '../lib/rss'
-import { sessionAt } from '../lib/market'
+import { SOURCES } from '../lib/sources.js'
+import { fetchSource, type FeedItem, type SourceResult } from '../lib/rss.js'
+import { sessionAt } from '../lib/market.js'
 
 const MAX_ITEMS = 60
 
