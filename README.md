@@ -59,24 +59,46 @@ data is wired up yet.
 
 ## Model
 
-Google Gemini, free tier (Flash only — Pro requires billing).
+Google Gemini, free tier. No model name here is taken from memory — every one
+was checked by a real call from the deployed function, and two names that
+memory would have suggested turned out to be wrong.
 
-The model ID is not taken from memory. `/api/models` calls ListModels on
-`generativelanguage.googleapis.com` and returns the Flash models the key can
-actually reach.
+**Availability, verified 2026-09-08 via generateContent from production:**
 
-Verified against the live key on **2026-09-08** via the deployed
-`/api/models` endpoint: 40 models expose `generateContent`, 20 of them Flash
-variants. Candidates with a 1,048,576-token input window and 65,536-token
-output window include `models/gemini-2.5-flash`, `models/gemini-3.5-flash`
-and `models/gemini-3.8-flash`.
+| Model | Usable | Trivial call | Notes |
+| --- | --- | --- | --- |
+| `gemini-3.5-flash` | yes | 7.5s | Chosen. Best judgement of the usable set. |
+| `gemini-3.5-flash-lite` | yes | 0.6s | Chosen as fallback. |
+| `gemini-3-flash-preview` | yes | 2.2s | Preview; not relied on for a deadline. |
+| `gemini-3.1-flash-lite` | yes | 2.6s | |
+| `gemini-3.8-flash` | no | — | UNAVAILABLE: high demand. |
+| `gemini-flash-latest` | no | — | Timed out at 20s. |
+| `gemini-2.5-flash` | no | — | Retired: "no longer available to new users". |
+| `gemini-2.5-flash-lite` | no | — | Retired: "no longer available to new users". |
 
-- **Model ID:** to be pinned once a live `generateContent` call confirms free-tier
-  access for the chosen candidate. Appearing in ListModels is not proof of quota.
-- **Flash access verified on:** 2026-09-08
+The two retirements are the reason for the rule. Both were plausible names, both
+appear in older documentation, and both return 404 for a key created today.
 
-The ID will be pinned to an explicit version rather than the `-latest` alias,
-so a brief captured today can be reproduced later against the same model.
+**Pinned:** `gemini-3.5-flash`, falling back to `gemini-3.5-flash-lite`.
+Explicit versions rather than the `-latest` alias, so a brief captured for
+review can be reproduced against the same model. Reproduce the check any time
+at `/api/models?generate=1`.
+
+**On the same worked example** (observed, single runs, not averages):
+
+| Model | Latency | Chain links | Exposures found |
+| --- | --- | --- | --- |
+| `gemini-3.5-flash` | 22.8s | 3 | 3 |
+| `gemini-3-flash-preview` | 13.7s | 4 | 5 |
+| `gemini-3.5-flash-lite` | 2.8s | 2 | 1 |
+
+The stronger model is slower and more discriminating: given a semiconductor
+story and a six-holding portfolio it reached three holdings and left two
+untouched, and read Intel as *ambiguous* because Intel both designs chips and
+competes as a foundry. The lite model reached one holding. A tool that marks
+every holding exposed to every event is not reasoning, so discrimination is
+weighted above speed here — and the worked example is served pre-captured, so
+a reader never waits for it.
 
 ## Data sources
 
