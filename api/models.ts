@@ -1,4 +1,5 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node'
+import { MODEL_CANDIDATES, probeGeneration } from '../lib/gemini.js'
 
 const LIST_MODELS = 'https://generativelanguage.googleapis.com/v1beta/models?pageSize=200'
 
@@ -16,7 +17,7 @@ type ListedModel = {
  * not something recalled from training. The key travels in a header rather than
  * the query string so it cannot end up in a proxy or access log.
  */
-export default async function handler(_req: VercelRequest, res: VercelResponse) {
+export default async function handler(req: VercelRequest, res: VercelResponse) {
   res.setHeader('cache-control', 'no-store')
 
   const key = process.env.GEMINI_API_KEY
@@ -24,6 +25,21 @@ export default async function handler(_req: VercelRequest, res: VercelResponse) 
     res.status(503).json({
       ok: false,
       reason: 'GEMINI_API_KEY is not set on this deployment.',
+    })
+    return
+  }
+
+  // Listing proves a model exists. Only a real generation call proves the
+  // free-tier key can use it, which is what decides the pinned model ID.
+  if (req.query.generate === '1') {
+    const probes = []
+    for (const model of MODEL_CANDIDATES) {
+      probes.push(await probeGeneration(model))
+    }
+    res.status(200).json({
+      probedAt: new Date().toISOString(),
+      usable: probes.filter((p) => p.usable).map((p) => p.model),
+      probes,
     })
     return
   }
