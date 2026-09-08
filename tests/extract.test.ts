@@ -39,7 +39,8 @@ test('closes the gap left where inline tags were removed', () => {
 })
 
 test('closes the gap before a possessive left by a stripped link', () => {
-  const html = "<p><a href="/asml">ASML</a> 's newest machines are being adopted, the company said today.</p>"
+  const html =
+    `<p><a href="/asml">ASML</a> 's newest machines are being adopted, the company said today.</p>`
   assert.match(paragraphsFrom(html), /^ASML's newest machines/)
 })
 
