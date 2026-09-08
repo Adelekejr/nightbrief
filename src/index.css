@@ -1,0 +1,38 @@
+@import "tailwindcss";
+
+@theme {
+  /* Nightdesk — "Dispatch". Warm near-black, not pure black: less glare at 6am. */
+  --color-ink: #16130f;
+  --color-ink-raised: #1e1a15;
+  --color-paper: #ede6d8;
+  --color-rule: #302a23;
+
+  /* One accent. Amber carries the verdict and the live indicators. */
+  --color-signal: #e8a33d;
+  /* Anything the model inferred rather than retrieved. */
+  --color-inferred: #8ba1b3;
+  /* Reserved for exactly one thing: what would falsify the reasoning. */
+  --color-falsify: #d9614c;
+
+  --font-serif: "Newsreader", ui-serif, Georgia, serif;
+  --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+
+html {
+  background: var(--color-ink);
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  margin: 0;
+  background: var(--color-ink);
+  color: var(--color-paper);
+  font-family: var(--font-serif);
+  font-optical-sizing: auto;
+  -webkit-font-smoothing: antialiased;
+}
+
+::selection {
+  background: var(--color-signal);
+  color: var(--color-ink);
+}
