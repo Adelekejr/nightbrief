@@ -1,22 +1,22 @@
 {
   "captured": {
-    "note": "A real run of /api/analyze, captured verbatim on 2026-09-08 so the worked example is instant and cannot fail in front of a reader. Nothing was edited.",
-    "capturedAt": "2026-09-08T17:40:15.103Z",
+    "note": "A real run of /api/analyze, captured verbatim on 2026-09-08 so the worked example is instant and cannot fail in front of a reader. Nothing was edited. The article body was fetched from CNBC at run time; the $400 million figure survives because it appears in that article, and would have been redacted if it did not.",
+    "capturedAt": "2026-09-08T21:02:21.806Z",
     "model": "gemini-3.5-flash",
-    "latencyMs": 22786
+    "latencyMs": 39904
   },
   "ok": true,
   "demo": "Sample portfolio. The article, its publisher, URL and timestamp are real and were taken from the live feed.",
-  "generatedAt": "2026-09-08T17:40:15.103Z",
+  "generatedAt": "2026-09-08T21:02:21.806Z",
   "model": "gemini-3.5-flash",
-  "latencyMs": 22786,
+  "latencyMs": 39904,
   "fallbacksUsed": [],
   "marketNow": {
-    "newYorkTime": "Sep 8, 2026, 1:39 PM",
+    "newYorkTime": "Sep 8, 2026, 5:01 PM",
     "holidayAware": false,
-    "phase": "regular",
-    "label": "US regular session",
-    "closed": false
+    "phase": "after-hours",
+    "label": "US after-hours",
+    "closed": true
   },
   "sources": [
     {
@@ -26,7 +26,8 @@
       "url": "https://www.cnbc.com/2026/09/08/tsmc-samsung-asml-high-na-euv-machine-ai-chips.html",
       "publishedAt": "2026-09-08T08:32:02.000Z",
       "sessionLabel": "US pre-market",
-      "unverifiedOrigin": false
+      "unverifiedOrigin": false,
+      "body": { "retrieved": true, "chars": 2287 }
     }
   ],
   "holdings": {
@@ -41,40 +42,49 @@
     "unverified": []
   },
   "brief": {
-    "headline": "TSMC and Samsung's commitment to ASML's advanced chipmaking tools secures the manufacturing pipeline for next-generation AI chips designed by Nvidia and AMD.",
+    "headline": "TSMC and Samsung have committed to buying ASML's advanced High NA EUV chipmaking machines, securing the manufacturing roadmap for next-generation AI and memory chips.",
     "event": {
-      "summary": "TSMC and Samsung have committed to adopting ASML's High NA EUV tools for advanced chipmaking to meet AI-driven demand for smaller, more complex semiconductors.",
+      "summary": "TSMC and Samsung committed to using ASML's High NA EUV lithography machines and joining an initiative for 12-inch photomask technology to improve productivity and lower costs.",
       "category": "company-specific",
       "occurredAt": "2026-09-08T08:32:02.000Z",
-      "entities": ["TSMC", "Samsung", "ASML"],
+      "entities": ["ASML", "TSMC", "Samsung", "Intel"],
       "magnitude": "notable",
-      "magnitudeBasis": "This represents a major commitment by the world's leading semiconductor foundries to adopt the next generation of lithography equipment, which is critical for future chip manufacturing.",
-      "surprise": "unclear"
+      "magnitudeBasis": "The commitment involves machines costing around $400 million each from the world's two largest chipmakers, providing critical growth visibility for ASML.",
+      "surprise": "partly-expected"
     },
     "chain": [
       {
         "step": 1,
-        "from": "TSMC and Samsung commit to ASML's High NA EUV tools",
-        "to": "Advanced chip manufacturing capabilities",
-        "mechanism": "The adoption of these tools allows foundries to manufacture smaller and more complex semiconductors required for advanced applications.",
+        "from": "ASML's High NA EUV announcement",
+        "to": "Advanced chip manufacturing roadmaps",
+        "mechanism": "TSMC and Samsung commit to using ASML's $400 million High NA EUV machines and a new 12-inch photomask initiative to lower chipmaking costs and improve productivity.",
         "confidence": "high",
         "basis": "retrieved",
         "sourceIds": ["src1"]
       },
       {
         "step": 2,
-        "from": "Advanced chip manufacturing capabilities",
-        "to": "Nvidia (rNVDA) and AMD (rAMD) product roadmaps",
-        "mechanism": "Fabless chip designers rely on advanced foundries to produce their next-generation AI accelerators and processors, meaning secured manufacturing capabilities support their future product lines.",
+        "from": "Advanced chip manufacturing roadmaps",
+        "to": "Fabless chip designers (Nvidia and AMD)",
+        "mechanism": "TSMC's adoption of High NA EUV secures the advanced manufacturing capability needed for the complex transistor architectures of future AI chips designed by Nvidia and AMD.",
         "confidence": "high",
         "basis": "inferred",
         "sourceIds": []
       },
       {
         "step": 3,
-        "from": "TSMC and Samsung commit to ASML's High NA EUV tools",
-        "to": "Intel (rINTC) foundry competitiveness",
-        "mechanism": "Intel operates its own foundries and competes with TSMC and Samsung; its rivals adopting the same advanced tools intensifies competition at the leading edge of chip manufacturing.",
+        "from": "Advanced chip manufacturing roadmaps",
+        "to": "Intel's foundry competitive positioning",
+        "mechanism": "Intel already uses High NA EUV. TSMC and Samsung joining as customers validates the technology but erodes Intel's exclusive lead in next-gen manufacturing.",
+        "confidence": "moderate",
+        "basis": "inferred",
+        "sourceIds": []
+      },
+      {
+        "step": 4,
+        "from": "Advanced chip manufacturing roadmaps",
+        "to": "DRAM memory market (Micron)",
+        "mechanism": "Samsung's commitment to use High NA EUV for DRAM from 2028 and 2030 to extend scaling and efficiency increases competitive pressure on rival memory makers like Micron.",
         "confidence": "moderate",
         "basis": "inferred",
         "sourceIds": []
@@ -84,53 +94,66 @@
       {
         "symbol": "rNVDA",
         "direction": "sensitive-positive",
-        "rationale": "Nvidia designs advanced GPUs for AI and relies on foundries like TSMC. The adoption of next-generation manufacturing tools ensures that the advanced fabrication technology Nvidia needs for its future chips will be available.",
+        "rationale": "Nvidia designs advanced AI GPUs and relies on TSMC for manufacturing. TSMC's commitment to ASML's next-gen lithography ensures the foundry capacity and technical capability required for Nvidia's future complex transistor architectures.",
         "confidence": "high",
         "chainSteps": [1, 2]
       },
       {
         "symbol": "rAMD",
         "direction": "sensitive-positive",
-        "rationale": "AMD designs advanced CPUs and GPUs for AI and servers. It depends on external foundries for manufacturing, so the adoption of advanced lithography tools by TSMC and Samsung supports AMD's long-term product development.",
+        "rationale": "AMD designs advanced CPUs and GPUs and competes in AI accelerators. Like Nvidia, it relies on TSMC's foundry services and benefits from TSMC upgrading its manufacturing capabilities to High NA EUV.",
         "confidence": "high",
         "chainSteps": [1, 2]
       },
       {
         "symbol": "rINTC",
         "direction": "ambiguous",
-        "rationale": "Intel is both a chip designer and a foundry operator. While the industry's shift to advanced tools validates the technology, TSMC and Samsung adopting these tools ensures they remain highly competitive, challenging Intel's foundry business.",
+        "rationale": "Intel was the early adopter of High NA EUV. While TSMC and Samsung's commitments validate the technology, they also mean Intel will face direct competition using the same advanced tools, eroding its early-mover advantage.",
         "confidence": "moderate",
         "chainSteps": [1, 3]
+      },
+      {
+        "symbol": "rMU",
+        "direction": "ambiguous",
+        "rationale": "Micron competes with Samsung in the DRAM market. Samsung's plan to use High NA EUV for DRAM from 2028 and 2030 to lower costs and improve efficiency could force Micron to make similar expensive capital investments or face a cost disadvantage.",
+        "confidence": "moderate",
+        "chainSteps": [1, 4]
       }
     ],
     "watchAtOpen": [
-      "Share price of ASML to see if the market reacts positively to the confirmed adoption of its high-end tools.",
-      "Share prices of TSMC and Samsung to gauge investor reaction to the capital expenditure commitment.",
-      "Trading volume and price movement of Nvidia and AMD for any immediate positive sentiment spillover."
+      "ASML stock price at the US open to see if the positive adoption news offsets early flat-to-lower trading in Amsterdam.",
+      "TSMC (TSM) and Intel (INTC) share price reactions to gauge how the market values the shifting competitive landscape in advanced foundry tech.",
+      "Micron (MU) trading to see if memory investors react to Samsung's long-term DRAM scaling roadmap."
     ],
     "falsifiers": [
-      "Reports indicating that the cost of High NA EUV tools is too high for foundries to achieve profitable yields, delaying actual deployment.",
-      "An announcement by major chip designers that they will delay transitioning to next-generation nodes due to design complexities."
+      "If TSMC or Samsung delay or cancel their plans to adopt High NA EUV machines.",
+      "If the high cost of the machines (around $400 million each) makes advanced chip production unprofitable for foundries.",
+      "If Intel's early deployment of High NA EUV fails to yield any competitive manufacturing advantages before TSMC and Samsung adopt it."
     ],
     "unknowns": [
-      "The exact timeline for when TSMC and Samsung will receive and fully integrate these High NA EUV tools into active production.",
-      "The financial terms of the commitments and how much capital expenditure TSMC and Samsung will allocate to these purchases.",
-      "Whether Intel's existing lead in acquiring High NA EUV tools provides it with any temporary competitive advantage before TSMC and Samsung deploy theirs."
+      "The exact number of High NA EUV machines ordered by TSMC and Samsung.",
+      "The specific timeline for TSMC's deployment of the machines, as only Samsung's 2028 and 2030 targets are detailed.",
+      "Whether Micron plans to adopt High NA EUV or stick to alternative scaling methods for its DRAM."
     ],
     "quotes": [
       {
-        "text": "TSMC and Samsung will adopt ASML's High NA EUV tools for advanced chipmaking as AI drives demand for smaller, more complex semiconductors.",
+        "text": "Samsung and TSMC, the world's two biggest chipmakers, have committed to using ASML's High NA extreme ultraviolet (EUV) lithography machines, as demand grows for more advanced chips.",
+        "sourceId": "src1"
+      },
+      { "text": "This tool can cost around $400 million.", "sourceId": "src1" },
+      {
+        "text": "Samsung, one of the world's biggest memory chipmakers, said it would use ASML's machines to produce DRAM, a key type of memory, from 2028.",
         "sourceId": "src1"
       }
     ]
   },
   "validation": {
     "rejections": [],
-    "chainKept": 3,
+    "chainKept": 4,
     "chainDropped": 0,
-    "exposuresKept": 3,
+    "exposuresKept": 4,
     "exposuresDropped": 0,
-    "quotesKept": 1,
+    "quotesKept": 3,
     "quotesDropped": 0,
     "figuresRedacted": 0
   }

@@ -162,7 +162,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       systemInstruction: SYSTEM_INSTRUCTION,
       prompt,
       schema: BRIEF_SCHEMA as unknown as Record<string, unknown>,
-      timeoutMs: 40_000,
+      // A good run has been observed at 39.9s. 40 would have cut it off.
+      timeoutMs: 50_000,
       thinkingLevel,
     })
 
