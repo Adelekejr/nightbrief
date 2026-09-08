@@ -43,19 +43,36 @@ not tell anyone what to buy or sell. The human reads the reasoning and decides.
 
 ## Status
 
-Early. The public URL exists so that a working demo predates the deadline
-rather than arriving on it.
+The vertical slice runs end to end: a news item and a list of holdings go in,
+and a brief comes out with its reasoning chain, sources, confidence and gaps.
 
 | Component | State |
 | --- | --- |
-| Public URL | live |
-| Serverless functions | live (`/api/health`, `/api/models`) |
-| Model | Flash access verified via ListModels, 2026-09-08 |
-| News sources | not wired |
-| Price data | not wired |
+| Public URL | live, no login |
+| News feed | live, 6 of 11 sources answering |
+| rToken universe | 18 pairs, observed and dated |
+| Analysis pipeline | live |
+| Provenance validator | live, 19 tests |
+| Reading interface | live |
+| Worked example | captured, served instantly |
+| Prices | not wired — and nothing on screen claims to be one |
 
-Nothing currently rendered in the interface is market data, because no market
-data is wired up yet.
+**What is real on screen.** Headlines, publishers, timestamps and links are
+fetched live. The market-session labels are computed from those timestamps.
+The rToken list was observed from Bitget on a stated date. The reasoning is
+generated, labelled as generated, and every claim in it is checked against the
+sources before display. **No price appears anywhere in the interface**, because
+no price source is wired up yet — rather than a placeholder dressed as one.
+
+## Endpoints
+
+| Route | Purpose |
+| --- | --- |
+| `/api/feed` | Aggregated live news. `?probe=1` measures each source. |
+| `/api/universe` | The verified rToken listing and its provenance. |
+| `/api/analyze` | POST an item and holdings. `GET ?demo=1` runs the worked example live. |
+| `/api/models` | ListModels. `?generate=1` proves the key can actually generate. |
+| `/api/health` | Whether the key is configured, as a boolean only. |
 
 ## Model
 
