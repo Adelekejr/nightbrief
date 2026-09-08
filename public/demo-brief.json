@@ -1,0 +1,137 @@
+{
+  "captured": {
+    "note": "A real run of /api/analyze, captured verbatim on 2026-09-08 so the worked example is instant and cannot fail in front of a reader. Nothing was edited.",
+    "capturedAt": "2026-09-08T17:40:15.103Z",
+    "model": "gemini-3.5-flash",
+    "latencyMs": 22786
+  },
+  "ok": true,
+  "demo": "Sample portfolio. The article, its publisher, URL and timestamp are real and were taken from the live feed.",
+  "generatedAt": "2026-09-08T17:40:15.103Z",
+  "model": "gemini-3.5-flash",
+  "latencyMs": 22786,
+  "fallbacksUsed": [],
+  "marketNow": {
+    "newYorkTime": "Sep 8, 2026, 1:39 PM",
+    "holidayAware": false,
+    "phase": "regular",
+    "label": "US regular session",
+    "closed": false
+  },
+  "sources": [
+    {
+      "id": "src1",
+      "publisher": "CNBC",
+      "title": "TSMC, Samsung commit to ASML's newest chipmaking tools as AI drives demand",
+      "url": "https://www.cnbc.com/2026/09/08/tsmc-samsung-asml-high-na-euv-machine-ai-chips.html",
+      "publishedAt": "2026-09-08T08:32:02.000Z",
+      "sessionLabel": "US pre-market",
+      "unverifiedOrigin": false
+    }
+  ],
+  "holdings": {
+    "verified": [
+      { "symbol": "rNVDA", "name": "Nvidia", "underlying": "NVDA" },
+      { "symbol": "rAMD", "name": "Advanced Micro Devices", "underlying": "AMD" },
+      { "symbol": "rINTC", "name": "Intel", "underlying": "INTC" },
+      { "symbol": "rMU", "name": "Micron Technology", "underlying": "MU" },
+      { "symbol": "rTSLA", "name": "Tesla", "underlying": "TSLA" },
+      { "symbol": "rSPY", "name": "SPDR S&P 500 ETF", "underlying": "SPY" }
+    ],
+    "unverified": []
+  },
+  "brief": {
+    "headline": "TSMC and Samsung's commitment to ASML's advanced chipmaking tools secures the manufacturing pipeline for next-generation AI chips designed by Nvidia and AMD.",
+    "event": {
+      "summary": "TSMC and Samsung have committed to adopting ASML's High NA EUV tools for advanced chipmaking to meet AI-driven demand for smaller, more complex semiconductors.",
+      "category": "company-specific",
+      "occurredAt": "2026-09-08T08:32:02.000Z",
+      "entities": ["TSMC", "Samsung", "ASML"],
+      "magnitude": "notable",
+      "magnitudeBasis": "This represents a major commitment by the world's leading semiconductor foundries to adopt the next generation of lithography equipment, which is critical for future chip manufacturing.",
+      "surprise": "unclear"
+    },
+    "chain": [
+      {
+        "step": 1,
+        "from": "TSMC and Samsung commit to ASML's High NA EUV tools",
+        "to": "Advanced chip manufacturing capabilities",
+        "mechanism": "The adoption of these tools allows foundries to manufacture smaller and more complex semiconductors required for advanced applications.",
+        "confidence": "high",
+        "basis": "retrieved",
+        "sourceIds": ["src1"]
+      },
+      {
+        "step": 2,
+        "from": "Advanced chip manufacturing capabilities",
+        "to": "Nvidia (rNVDA) and AMD (rAMD) product roadmaps",
+        "mechanism": "Fabless chip designers rely on advanced foundries to produce their next-generation AI accelerators and processors, meaning secured manufacturing capabilities support their future product lines.",
+        "confidence": "high",
+        "basis": "inferred",
+        "sourceIds": []
+      },
+      {
+        "step": 3,
+        "from": "TSMC and Samsung commit to ASML's High NA EUV tools",
+        "to": "Intel (rINTC) foundry competitiveness",
+        "mechanism": "Intel operates its own foundries and competes with TSMC and Samsung; its rivals adopting the same advanced tools intensifies competition at the leading edge of chip manufacturing.",
+        "confidence": "moderate",
+        "basis": "inferred",
+        "sourceIds": []
+      }
+    ],
+    "exposures": [
+      {
+        "symbol": "rNVDA",
+        "direction": "sensitive-positive",
+        "rationale": "Nvidia designs advanced GPUs for AI and relies on foundries like TSMC. The adoption of next-generation manufacturing tools ensures that the advanced fabrication technology Nvidia needs for its future chips will be available.",
+        "confidence": "high",
+        "chainSteps": [1, 2]
+      },
+      {
+        "symbol": "rAMD",
+        "direction": "sensitive-positive",
+        "rationale": "AMD designs advanced CPUs and GPUs for AI and servers. It depends on external foundries for manufacturing, so the adoption of advanced lithography tools by TSMC and Samsung supports AMD's long-term product development.",
+        "confidence": "high",
+        "chainSteps": [1, 2]
+      },
+      {
+        "symbol": "rINTC",
+        "direction": "ambiguous",
+        "rationale": "Intel is both a chip designer and a foundry operator. While the industry's shift to advanced tools validates the technology, TSMC and Samsung adopting these tools ensures they remain highly competitive, challenging Intel's foundry business.",
+        "confidence": "moderate",
+        "chainSteps": [1, 3]
+      }
+    ],
+    "watchAtOpen": [
+      "Share price of ASML to see if the market reacts positively to the confirmed adoption of its high-end tools.",
+      "Share prices of TSMC and Samsung to gauge investor reaction to the capital expenditure commitment.",
+      "Trading volume and price movement of Nvidia and AMD for any immediate positive sentiment spillover."
+    ],
+    "falsifiers": [
+      "Reports indicating that the cost of High NA EUV tools is too high for foundries to achieve profitable yields, delaying actual deployment.",
+      "An announcement by major chip designers that they will delay transitioning to next-generation nodes due to design complexities."
+    ],
+    "unknowns": [
+      "The exact timeline for when TSMC and Samsung will receive and fully integrate these High NA EUV tools into active production.",
+      "The financial terms of the commitments and how much capital expenditure TSMC and Samsung will allocate to these purchases.",
+      "Whether Intel's existing lead in acquiring High NA EUV tools provides it with any temporary competitive advantage before TSMC and Samsung deploy theirs."
+    ],
+    "quotes": [
+      {
+        "text": "TSMC and Samsung will adopt ASML's High NA EUV tools for advanced chipmaking as AI drives demand for smaller, more complex semiconductors.",
+        "sourceId": "src1"
+      }
+    ]
+  },
+  "validation": {
+    "rejections": [],
+    "chainKept": 3,
+    "chainDropped": 0,
+    "exposuresKept": 3,
+    "exposuresDropped": 0,
+    "quotesKept": 1,
+    "quotesDropped": 0,
+    "figuresRedacted": 0
+  }
+}
