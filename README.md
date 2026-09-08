@@ -80,8 +80,24 @@ so a brief captured today can be reproduced later against the same model.
 
 ## Data sources
 
-_To be recorded here as each is wired up, stating plainly which are live and
-which are sample._
+**News — live.** Eleven keyless RSS/Atom feeds are attempted on every request.
+Six answered when last measured (2026-09-08): Federal Reserve, CNBC, CNBC
+Markets, MarketWatch, Yahoo Finance and the European Central Bank. Five did
+not: the Bureau of Labor Statistics (403), the Bureau of Economic Analysis
+(404), the US Treasury (timeout), Nasdaq (timeout) and the SEC (403).
+
+Rather than hide that, `/api/feed` names the sources that answered and the
+sources that did not, in the response itself. `/api/feed?probe=1` reports
+status, latency and item count per source, measured from the deployed function.
+
+**Tokenized universe — observed, dated, partial.** Eighteen Bitget rToken
+pairs, read off the Bitget app's "Spot stocks" tab on 2026-09-08. Prices were
+visible in that capture and are deliberately not recorded: a price from a
+screenshot is stale immediately and cannot be verified by a reader. The list
+is explicitly incomplete, so an unrecognised symbol is reported as "not
+verified by us" rather than treated as non-existent.
+
+**Prices — not yet wired.** Nothing in the interface currently shows a price.
 
 ## Security
 
