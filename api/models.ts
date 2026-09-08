@@ -1,5 +1,5 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node'
-import { MODEL_CANDIDATES, probeGeneration } from '../lib/gemini.js'
+import { MODEL_CANDIDATES, probeGeneration, type ApiVersion } from '../lib/gemini.js'
 
 const LIST_MODELS = 'https://generativelanguage.googleapis.com/v1beta/models?pageSize=200'
 
@@ -32,9 +32,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   // Listing proves a model exists. Only a real generation call proves the
   // free-tier key can use it, which is what decides the pinned model ID.
   if (req.query.generate === '1') {
+    const apiVersion: ApiVersion = req.query.v === 'v1' ? 'v1' : 'v1beta'
+    const only = typeof req.query.model === 'string' ? [req.query.model] : MODEL_CANDIDATES
+
+    // Sequential on purpose: parallel probes on a free tier just trip the
+    // rate limit and turn a clear answer into a confusing one.
     const probes = []
-    for (const model of MODEL_CANDIDATES) {
-      probes.push(await probeGeneration(model))
+    for (const model of only) {
+      probes.push(await probeGeneration(model, apiVersion))
     }
     res.status(200).json({
       probedAt: new Date().toISOString(),

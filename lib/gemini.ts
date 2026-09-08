@@ -6,7 +6,10 @@
  * captured in a URL or an access log.
  */
 
-const ENDPOINT = 'https://generativelanguage.googleapis.com/v1beta/models'
+const HOST = 'https://generativelanguage.googleapis.com'
+
+/** Newer models are not always exposed on every API version. */
+export type ApiVersion = 'v1beta' | 'v1'
 
 /**
  * Ordered by preference. Every one of these was confirmed present via
@@ -15,7 +18,11 @@ const ENDPOINT = 'https://generativelanguage.googleapis.com/v1beta/models'
  */
 export const MODEL_CANDIDATES = [
   'gemini-2.5-flash',
+  'gemini-2.5-flash-lite',
+  'gemini-3-flash-preview',
+  'gemini-3.1-flash-lite',
   'gemini-3.5-flash',
+  'gemini-3.8-flash',
   'gemini-flash-latest',
 ] as const
 
@@ -41,8 +48,24 @@ export function hasKey(): boolean {
  * Asks for JSON and enforces it with a response schema, so the caller gets a
  * structure to validate rather than prose to parse.
  */
+/**
+ * Google error bodies carry a human-readable reason. Only the status and
+ * message are surfaced, capped in length, and the key never appears in them.
+ */
+async function upstreamReason(res: Response): Promise<string> {
+  try {
+    const body = (await res.json()) as { error?: { status?: string; message?: string } }
+    const status = body.error?.status ?? String(res.status)
+    const message = body.error?.message ?? 'no message'
+    return `${status}: ${message}`.slice(0, 300)
+  } catch {
+    return `HTTP ${res.status}`
+  }
+}
+
 export async function generateJson<T>(opts: {
   model: string
+  apiVersion?: ApiVersion
   systemInstruction: string
   prompt: string
   schema: JsonSchema
@@ -57,7 +80,8 @@ export async function generateJson<T>(opts: {
   const started = Date.now()
 
   try {
-    const res = await fetch(`${ENDPOINT}/${opts.model}:generateContent`, {
+    const version = opts.apiVersion ?? 'v1beta'
+    const res = await fetch(`${HOST}/${version}/models/${opts.model}:generateContent`, {
       method: 'POST',
       signal: controller.signal,
       headers: { 'x-goog-api-key': key, 'content-type': 'application/json' },
@@ -84,8 +108,7 @@ export async function generateJson<T>(opts: {
     }
 
     if (!res.ok) {
-      // Error bodies can echo request content; keep only the status.
-      return { ok: false, kind: 'upstream', detail: `Gemini returned ${res.status}` }
+      return { ok: false, kind: 'upstream', detail: await upstreamReason(res) }
     }
 
     const body = (await res.json()) as GeminiResponse
@@ -130,10 +153,11 @@ export async function generateJson<T>(opts: {
  * Does the key actually get to generate with this model, and how fast?
  * ListModels answers neither question.
  */
-export async function probeGeneration(model: string) {
+export async function probeGeneration(model: string, apiVersion: ApiVersion = 'v1beta') {
   const started = Date.now()
   const out = await generateJson<{ ok: boolean }>({
     model,
+    apiVersion,
     systemInstruction: 'Reply with JSON only.',
     prompt: 'Return {"ok": true}.',
     schema: {
@@ -141,11 +165,18 @@ export async function probeGeneration(model: string) {
       properties: { ok: { type: 'BOOLEAN' } },
       required: ['ok'],
     },
-    timeoutMs: 20_000,
-    maxOutputTokens: 256,
+    timeoutMs: 30_000,
+    maxOutputTokens: 512,
   })
 
   return out.ok
-    ? { model, usable: true as const, ms: out.ms }
-    : { model, usable: false as const, ms: Date.now() - started, kind: out.kind, detail: out.detail }
+    ? { model, apiVersion, usable: true as const, ms: out.ms }
+    : {
+        model,
+        apiVersion,
+        usable: false as const,
+        ms: Date.now() - started,
+        kind: out.kind,
+        detail: out.detail,
+      }
 }
