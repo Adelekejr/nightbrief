@@ -14,8 +14,19 @@ import { extractArticle } from '../lib/extract.js'
  * gemini-2.5-flash and gemini-2.5-flash-lite return 404 for new keys, and
  * gemini-flash-latest timed out, so neither memory nor the model listing was
  * a safe basis for this choice.
+ *
+ * Three rungs rather than two, because the preferred model has returned
+ * UNAVAILABLE ("experiencing high demand") twice in one afternoon. The middle
+ * rung is a preview build, which is not something to depend on but is strictly
+ * better than nothing when it is only ever reached after the first has failed:
+ * on the same article it found four chain links where the lite model found two
+ * and missed both obvious exposures.
  */
-const MODEL_CHAIN = ['gemini-3.5-flash', 'gemini-3.5-flash-lite'] as const
+const MODEL_CHAIN = [
+  'gemini-3.5-flash',
+  'gemini-3-flash-preview',
+  'gemini-3.5-flash-lite',
+] as const
 
 const MAX_INPUT = 12_000
 
