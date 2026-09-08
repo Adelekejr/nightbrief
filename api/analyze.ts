@@ -6,6 +6,7 @@ import { sessionAt } from '../lib/market.js'
 import { buildPrompt, SYSTEM_INSTRUCTION } from '../lib/prompt.js'
 import { resolve, type RToken } from '../lib/universe.js'
 import { validateBrief } from '../lib/validate.js'
+import { DEMO_ARTICLE, DEMO_HOLDINGS, DEMO_NOTE } from '../lib/demo.js'
 
 /**
  * Verified 2026-09-08 by real generateContent calls from this deployment.
@@ -32,8 +33,11 @@ type Body = {
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   res.setHeader('cache-control', 'no-store')
 
-  if (req.method !== 'POST') {
-    res.status(405).json({ ok: false, reason: 'Use POST.' })
+  // GET ?demo=1 runs the canonical research task against the pinned article,
+  // so the full flow can be exercised without composing a request.
+  const isDemo = req.query.demo === '1'
+  if (req.method !== 'POST' && !isDemo) {
+    res.status(405).json({ ok: false, reason: 'Use POST, or GET ?demo=1 for the worked example.' })
     return
   }
 
@@ -42,7 +46,17 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return
   }
 
-  const body = (req.body ?? {}) as Body
+  const body: Body = isDemo
+    ? {
+        text: DEMO_ARTICLE.text,
+        title: DEMO_ARTICLE.title,
+        publisher: DEMO_ARTICLE.publisher,
+        url: DEMO_ARTICLE.url,
+        publishedAt: DEMO_ARTICLE.publishedAt ?? undefined,
+        holdings: DEMO_HOLDINGS,
+        model: typeof req.query.model === 'string' ? req.query.model : undefined,
+      }
+    : ((req.body ?? {}) as Body)
   const text = (body.text ?? '').trim().slice(0, MAX_INPUT)
   const title = (body.title ?? '').trim().slice(0, 500)
 
@@ -118,6 +132,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
       res.status(200).json({
         ok: true,
+        demo: isDemo ? DEMO_NOTE : undefined,
         generatedAt: new Date().toISOString(),
         model: out.model,
         latencyMs: out.ms,
