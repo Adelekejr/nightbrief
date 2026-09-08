@@ -54,6 +54,8 @@ export function paragraphsFrom(html: string, maxChars = 6000): string {
       // "Samsung and TSMC , the world's biggest". Quotes are checked verbatim
       // against this text, so tidying here keeps them clean too.
       .replace(/\s+([,.;:!?%])/g, '$1')
+      // "<a>ASML</a>'s" leaves "ASML 's" once the tag goes.
+      .replace(/\s+([’'])(s\b|\s)/g, '$1$2')
       .replace(/\(\s+/g, '(')
       .replace(/\s+\)/g, ')')
       .trim()

@@ -38,6 +38,11 @@ test('closes the gap left where inline tags were removed', () => {
   )
 })
 
+test('closes the gap before a possessive left by a stripped link', () => {
+  const html = "<p><a href="/asml">ASML</a> 's newest machines are being adopted, the company said today.</p>"
+  assert.match(paragraphsFrom(html), /^ASML's newest machines/)
+})
+
 test('drops duplicated paragraphs', () => {
   const p = '<p>This exact paragraph appears twice in the markup, as publishers often do.</p>'
   assert.equal(paragraphsFrom(p + p).split('\n').length, 1)
