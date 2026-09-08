@@ -50,6 +50,12 @@ export function paragraphsFrom(html: string, maxChars = 6000): string {
   for (const match of cleaned.matchAll(/<p\b[^>]*>([\s\S]*?)<\/p>/gi)) {
     const text = decode(match[1].replace(/<[^>]*>/g, ' '))
       .replace(/\s+/g, ' ')
+      // Inline links leave a gap before punctuation once their tags go:
+      // "Samsung and TSMC , the world's biggest". Quotes are checked verbatim
+      // against this text, so tidying here keeps them clean too.
+      .replace(/\s+([,.;:!?%])/g, '$1')
+      .replace(/\(\s+/g, '(')
+      .replace(/\s+\)/g, ')')
       .trim()
 
     // Real prose, not a caption or a "Sign up" fragment.

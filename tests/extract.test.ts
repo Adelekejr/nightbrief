@@ -29,6 +29,15 @@ test('decodes entities and collapses whitespace', () => {
   )
 })
 
+test('closes the gap left where inline tags were removed', () => {
+  const html =
+    '<p>Samsung and <a href="/tsmc">TSMC</a> , the two biggest chipmakers, committed to the tools ( per ASML ) .</p>'
+  assert.equal(
+    paragraphsFrom(html),
+    'Samsung and TSMC, the two biggest chipmakers, committed to the tools (per ASML).',
+  )
+})
+
 test('drops duplicated paragraphs', () => {
   const p = '<p>This exact paragraph appears twice in the markup, as publishers often do.</p>'
   assert.equal(paragraphsFrom(p + p).split('\n').length, 1)
