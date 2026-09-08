@@ -18,6 +18,7 @@ export type SourceRef = {
   publishedAt: string | null
   sessionLabel: string | null
   unverifiedOrigin?: boolean
+  body?: { retrieved: true; chars: number } | { retrieved: false; reason: string }
 }
 
 export type ChainStep = {

@@ -7,6 +7,7 @@ import { buildPrompt, SYSTEM_INSTRUCTION } from '../lib/prompt.js'
 import { resolve, type RToken } from '../lib/universe.js'
 import { validateBrief } from '../lib/validate.js'
 import { DEMO_ARTICLE, DEMO_HOLDINGS, DEMO_NOTE } from '../lib/demo.js'
+import { extractArticle } from '../lib/extract.js'
 
 /**
  * Verified 2026-09-08 by real generateContent calls from this deployment.
@@ -92,6 +93,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return
   }
 
+  // A feed item is one syndicated sentence. Reading the article itself gives
+  // the model something to reason over, and gives the validator a far larger
+  // pool of real figures to check claims against.
+  const url = body.url?.slice(0, 500) ?? ''
+  const extraction = url ? await extractArticle(url) : null
+  const bodyText = extraction?.ok ? extraction.text : text
+
   // Pasted text is source material, but it is not a source we checked. The
   // publisher label says so rather than lending it borrowed authority.
   const pasted = !body.publisher
@@ -100,10 +108,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       id: 'src1',
       publisher: body.publisher?.slice(0, 120) || 'Pasted by the reader — not independently verified',
       title: title || text.slice(0, 160),
-      url: body.url?.slice(0, 500) ?? '',
+      url,
       publishedAt: body.publishedAt ?? null,
       sessionLabel: body.publishedAt ? sessionAt(new Date(body.publishedAt)).label : null,
-      text,
+      text: bodyText,
     },
   ]
 
@@ -150,6 +158,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           publishedAt: e.publishedAt,
           sessionLabel: e.sessionLabel,
           unverifiedOrigin: pasted,
+          // Whether the full article was read, or only the syndicated summary.
+          body: extraction
+            ? extraction.ok
+              ? { retrieved: true as const, chars: extraction.chars }
+              : { retrieved: false as const, reason: extraction.reason }
+            : undefined,
         })),
         holdings: {
           verified: held.map((t) => ({ symbol: t.symbol, name: t.name, underlying: t.underlying })),
