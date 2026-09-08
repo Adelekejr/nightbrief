@@ -11,6 +11,8 @@ const HOST = 'https://generativelanguage.googleapis.com'
 /** Newer models are not always exposed on every API version. */
 export type ApiVersion = 'v1beta' | 'v1'
 
+export type ThinkingLevel = 'low' | 'high'
+
 /**
  * Ordered by preference. Every one of these was confirmed present via
  * ListModels against the live key on 2026-09-08; presence there is not proof
@@ -71,6 +73,8 @@ export async function generateJson<T>(opts: {
   schema: JsonSchema
   timeoutMs?: number
   maxOutputTokens?: number
+  /** Gemini 3 reasoning depth. Omitted entirely when not set. */
+  thinkingLevel?: ThinkingLevel
 }): Promise<GenerateOutcome<T>> {
   const key = process.env.GEMINI_API_KEY
   if (!key) return { ok: false, kind: 'no-key', detail: 'GEMINI_API_KEY is not set.' }
@@ -95,6 +99,7 @@ export async function generateJson<T>(opts: {
           // without collapsing into the same phrasing every time.
           temperature: 0.3,
           maxOutputTokens: opts.maxOutputTokens ?? 8192,
+          ...(opts.thinkingLevel ? { thinkingLevel: opts.thinkingLevel } : {}),
         },
       }),
     })

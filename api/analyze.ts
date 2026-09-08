@@ -1,7 +1,7 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node'
 import type { Brief, Evidence } from '../lib/brief.js'
 import { BRIEF_SCHEMA } from '../lib/brief.js'
-import { generateJson, hasKey } from '../lib/gemini.js'
+import { generateJson, hasKey, type ThinkingLevel } from '../lib/gemini.js'
 import { sessionAt } from '../lib/market.js'
 import { buildPrompt, SYSTEM_INSTRUCTION } from '../lib/prompt.js'
 import { resolve, type RToken } from '../lib/universe.js'
@@ -110,6 +110,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   const now = sessionAt(new Date())
   const prompt = buildPrompt({ evidence, held, unverified, now })
   const chain = body.model ? [body.model] : MODEL_CHAIN
+  const thinkingLevel: ThinkingLevel | undefined =
+    req.query.think === 'low' ? 'low' : req.query.think === 'high' ? 'high' : undefined
 
   const attempts: Array<{ model: string; kind: string; detail: string; ms: number }> = []
 
@@ -121,6 +123,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       prompt,
       schema: BRIEF_SCHEMA as unknown as Record<string, unknown>,
       timeoutMs: 40_000,
+      thinkingLevel,
     })
 
     if (out.ok) {
@@ -135,6 +138,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         demo: isDemo ? DEMO_NOTE : undefined,
         generatedAt: new Date().toISOString(),
         model: out.model,
+        thinkingLevel: thinkingLevel ?? 'default',
         latencyMs: out.ms,
         fallbacksUsed: attempts,
         marketNow: now,
