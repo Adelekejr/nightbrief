@@ -50,7 +50,7 @@ rather than arriving on it.
 | --- | --- |
 | Public URL | live |
 | Serverless functions | live (`/api/health`, `/api/models`) |
-| Model | pending ListModels verification |
+| Model | Flash access verified via ListModels, 2026-09-08 |
 | News sources | not wired |
 | Price data | not wired |
 
@@ -65,8 +65,18 @@ The model ID is not taken from memory. `/api/models` calls ListModels on
 `generativelanguage.googleapis.com` and returns the Flash models the key can
 actually reach.
 
-- **Model ID:** _pending verification_
-- **Verified on:** _pending_
+Verified against the live key on **2026-09-08** via the deployed
+`/api/models` endpoint: 40 models expose `generateContent`, 20 of them Flash
+variants. Candidates with a 1,048,576-token input window and 65,536-token
+output window include `models/gemini-2.5-flash`, `models/gemini-3.5-flash`
+and `models/gemini-3.8-flash`.
+
+- **Model ID:** to be pinned once a live `generateContent` call confirms free-tier
+  access for the chosen candidate. Appearing in ListModels is not proof of quota.
+- **Flash access verified on:** 2026-09-08
+
+The ID will be pinned to an explicit version rather than the `-latest` alias,
+so a brief captured today can be reproduced later against the same model.
 
 ## Data sources
 
