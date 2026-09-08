@@ -45,16 +45,44 @@ const text = (v: unknown): string => {
   return ''
 }
 
+const NAMED_ENTITIES: Record<string, string> = {
+  amp: "&",
+  lt: "<",
+  gt: ">",
+  quot: '"',
+  apos: "'",
+  nbsp: " ",
+  hellip: "\u2026",
+  mdash: "\u2014",
+  ndash: "\u2013",
+  lsquo: "\u2018",
+  rsquo: "\u2019",
+  ldquo: "\u201c",
+  rdquo: "\u201d",
+}
+
+/**
+ * Publishers escape aggressively and inconsistently — MarketWatch ships
+ * hex entities, others decimal or named. Undecoded, they reach both the
+ * model and the reader as literal noise.
+ */
+const decodeEntities = (s: string): string =>
+  s.replace(/&(#x[0-9a-f]+|#\d+|[a-z]+);/gi, (whole, body: string) => {
+    const b = body.toLowerCase()
+    if (b.startsWith("#x")) {
+      const code = Number.parseInt(b.slice(2), 16)
+      return Number.isNaN(code) ? whole : String.fromCodePoint(code)
+    }
+    if (b.startsWith("#")) {
+      const code = Number.parseInt(b.slice(1), 10)
+      return Number.isNaN(code) ? whole : String.fromCodePoint(code)
+    }
+    return NAMED_ENTITIES[b] ?? whole
+  })
+
 const stripTags = (html: string): string =>
-  html
-    .replace(/<[^>]*>/g, ' ')
-    .replace(/&nbsp;/g, ' ')
-    .replace(/&amp;/g, '&')
-    .replace(/&quot;/g, '"')
-    .replace(/&#39;/g, "'")
-    .replace(/&lt;/g, '<')
-    .replace(/&gt;/g, '>')
-    .replace(/\s+/g, ' ')
+  decodeEntities(html.replace(/<[^>]*>/g, " "))
+    .replace(/\s+/g, " ")
     .trim()
 
 const toIso = (raw: string): string | null => {
