@@ -117,6 +117,27 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   const now = sessionAt(new Date())
   const prompt = buildPrompt({ evidence, held, unverified, now })
+
+  // ?dry=1 stops before the model call. Useful for checking what was actually
+  // retrieved and what the model would be shown, without spending free-tier
+  // quota to find out.
+  if (req.query.dry === '1') {
+    res.status(200).json({
+      ok: true,
+      dryRun: true,
+      marketNow: now,
+      extraction: extraction
+        ? extraction.ok
+          ? { retrieved: true, chars: extraction.chars, ms: extraction.ms }
+          : { retrieved: false, reason: extraction.reason, ms: extraction.ms }
+        : { retrieved: false, reason: 'no url supplied' },
+      evidenceChars: bodyText.length,
+      evidencePreview: bodyText.slice(0, 600),
+      holdings: { verified: held.map((t) => t.symbol), unverified },
+      promptChars: prompt.length,
+    })
+    return
+  }
   const chain = body.model ? [body.model] : MODEL_CHAIN
   const thinkingLevel: ThinkingLevel | undefined =
     req.query.think === 'low' ? 'low' : req.query.think === 'high' ? 'high' : undefined
