@@ -104,6 +104,8 @@ for (const [name, hash] of [
   ['the overnight desk', '#/overnight'],
   ['the worked example', '#/example'],
   ['browse', '#/browse'],
+  ['the validation report', '#/validation'],
+  ['the checks page', '#/checks'],
 ] as const) {
   test(`${name} reads at AA`, async ({ page }) => {
     await stubApi(page)

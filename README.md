@@ -289,25 +289,38 @@ cannot be captured in a URL or access log.
 Brief. Five things measured against this deployment: source uptime, duplicate
 rate, freshness, feed and Brief latency, and match collision risk.
 
-Every figure carries one of three labels, and none is ever silently promoted
-from one to the next:
+Four kinds of statement, separated by heading on the page rather than left to
+be inferred from a one-word label:
 
 | Label | Means |
 | --- | --- |
-| `observed` | Measured — live when the page loaded, or from one dated, named run whose source is linked. |
+| `targeted` | The code cannot do otherwise. A structural property of the pipeline, true of every run, checkable by reading the named file. Never a rate. |
+| `observed` | What one identified run did — live on load, or captured and dated. The sample size is always stated. |
 | `estimated` | Reasoned from a real but partial or historical measurement, such as a probe run once during development. |
-| `targeted` | A goal, or an invariant enforced in code. Not a measurement of anything that has happened. |
+| `gap` | Nobody has assessed this. No number and no label, because either would imply a reading exists. |
+
+The structural guarantee is stated precisely, because "100% citation coverage"
+would have been false: an inferred link cites nothing **by design** and is kept
+and labelled as inference. What the code enforces is that no claim presented as
+retrieved survives without a supplied citation, no quote survives that is not
+verbatim, and no figure survives that appears in no source. That is a claim
+about traceability, not about whether a surviving claim is correct — and the
+page says so next to the guarantee rather than leaving it to be worked out.
 
 The live section calls `/api/overnight?report=1`, which stops before the model
 call — reading a report should not spend the deployment's free-tier quota.
 
-**What the report does not claim.** There is no false-positive rate against a
-human-judged sample of matched stories, because no labelled dataset exists.
-The page says so rather than filling the gap with a number. What it shows
-instead is a collision-risk proxy — direct matches made on a bare ticker of
-three characters or fewer, which is the case the standalone-token boundary
-exists to contain — and the fact that every direct match is a string the
-reader can verify by opening the source.
+**What the report does not claim.** Two things are marked as gaps and left
+without numbers. Whether the claims that survive validation are *right* — the
+mechanism named is the one that operated, the exposure points the right way —
+needs Briefs scored against human judgement. And the false-positive rate on
+matching needs someone judging, story by story, whether a match was really
+about the holding. Neither labelled set exists, so neither gets a figure. What
+stands in their place is structural: a collision-risk proxy (direct matches on
+a bare ticker of three characters or fewer, the case the standalone-token
+boundary exists to contain), and the fact that every direct match is a string
+the reader can open the source and check. Checkable is a weaker claim than
+measured, and the page does not present it as the stronger one.
 
 ## Ask the desk
 
@@ -322,7 +335,7 @@ never implies an understanding that is not there.
 ```
 npm test           # 65 unit tests — the validator, matcher, universe, routing
 npm run typecheck
-npm run build && npm run test:browser   # 35 browser checks, phone and desktop
+npm run build && npm run test:browser   # 37 browser checks, phone and desktop
 ```
 
 The browser checks exist because every defect a reader has had to report on

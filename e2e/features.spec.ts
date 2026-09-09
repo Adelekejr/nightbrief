@@ -135,8 +135,23 @@ test.describe('the validation report', () => {
       expect(labels).toBeGreaterThan(3)
     }).toPass()
 
-    // The one figure this report cannot honestly produce is stated as a gap.
-    await expect(page.getByText(/not measured: a false-positive rate/)).toBeVisible()
+    // The three kinds of statement are named on the page as headings, not
+    // left to be inferred from a one-word label at the end of a row.
+    await expect(page.getByRole('heading', { name: /What the code structurally prevents/ })).toBeVisible()
+    await expect(page.getByRole('heading', { name: /What was measured, on which run/ })).toBeVisible()
+    await expect(
+      page.getByRole('heading', { name: /What needs a labelled evaluation set/ }).first(),
+    ).toBeVisible()
+
+    // The structural guarantee must not read as a measured rate, and must
+    // say what it does not cover.
+    await expect(page.getByText('0, by construction')).toBeVisible()
+    await expect(page.getByText(/An inferred link cites nothing/)).toBeVisible()
+    await expect(page.getByText(/says nothing about whether a surviving claim is correct/)).toBeVisible()
+
+    // The figures this report cannot honestly produce are stated as gaps.
+    await expect(page.getByText('Whether the claims that survive are right.')).toBeVisible()
+    await expect(page.getByText('The false-positive rate itself.')).toBeVisible()
   })
 
   test('is reachable from the overnight desk', async ({ page }) => {

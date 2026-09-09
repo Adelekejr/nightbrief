@@ -94,19 +94,56 @@ function Section({
 }
 
 /**
+ * Names which of the three kinds of statement follows.
+ *
+ * The distinction between "the code cannot do otherwise", "this is what one
+ * run did" and "nobody has measured this" is the entire point of the page,
+ * so it is a heading a reader passes through, not a one-word label they have
+ * to notice and decode at the end of a row.
+ */
+function Kind({ children }: { children: React.ReactNode }) {
+  return (
+    <h3 className="mt-6 mb-1 font-mono text-micro tracking-wide text-paper-mid">{children}</h3>
+  )
+}
+
+/**
+ * A thing nobody has measured. No number and no basis mark, because both
+ * would imply a reading exists. Cool blue, the same register this app uses
+ * everywhere for "not established" — never red, which would read as an error
+ * rather than as an honest boundary.
+ */
+function Gap({ title, children }: { title: string; children: React.ReactNode }) {
+  return (
+    <div className="mt-2 border-l-2 border-inferred/40 pl-3">
+      <p className="font-serif text-body text-inferred">{title}</p>
+      <p className="mt-1 font-serif text-caption text-inferred">{children}</p>
+    </div>
+  )
+}
+
+/**
  * What this project can measure about itself, and what it cannot — read
  * straight, not rounded up.
  *
- * Every figure below is labelled OBSERVED, ESTIMATED or TARGETED, and never
- * silently promoted from one to the other. OBSERVED means measured, either
- * live on this load or from one dated, named run whose source is linked.
- * ESTIMATED means reasoned from a real but partial or historical
- * measurement — a probe run during development, not re-checked on every
- * page load. TARGETED means a goal or an invariant this project enforces in
- * code, not a measurement of anything that has happened. Where a number
- * that matters cannot honestly be measured — a false-positive rate against
- * a human-judged sample, chiefly — that is stated as a gap, the same way an
- * unresolved Brief states one, rather than filled in with a guess.
+ * FOUR kinds of statement, and the difference between them is the page:
+ *
+ *   TARGETED  — the code cannot do otherwise. A structural property of the
+ *               pipeline, true of every run, checkable by reading the file
+ *               named next to it. Never a rate.
+ *   OBSERVED  — what one identified run did. Live on this load, or captured
+ *               and dated. The sample size is always stated, because n=1 is
+ *               a real finding and a hidden n=1 is a lie.
+ *   ESTIMATED — reasoned from a real but partial or historical measurement.
+ *   GAP       — nobody has assessed this. No number and no basis mark, since
+ *               either would imply a reading exists.
+ *
+ * An earlier version of this page put a structural guarantee and a measured
+ * result under one "100%", which made the strongest claim on the page rest
+ * on a reader noticing a one-word label. Worse, "100% citation coverage" was
+ * not even accurate: an inferred link cites nothing by design and is kept.
+ * The three are now separated by heading, and each says in its own words
+ * what it does and does not establish.
  */
 export default function Validation({ onBack }: { onBack: () => void }) {
   const [report, setReport] = useState<Async<ReportResponse>>({ at: 'loading' })
@@ -138,6 +175,40 @@ export default function Validation({ onBack }: { onBack: () => void }) {
         measured against this deployment, not asserted about it. Nothing here
         is rounded up to look better than what was actually run.
       </p>
+
+      {/* The legend is on the page rather than in a README, because a reader
+          who cannot tell an enforced invariant from a single observation
+          cannot read the rest of this correctly. */}
+      <dl className="mt-5 border-t border-rule pt-4">
+        {[
+          [
+            'targeted',
+            'The code cannot do otherwise. A structural property of the pipeline, true of every run, checkable by reading the named file — not a rate and not a goal being worked toward.',
+          ],
+          [
+            'observed',
+            'What a specific run actually did. Measured live when this page loaded, or captured from one dated run that is named and linked. The sample size is stated every time.',
+          ],
+          [
+            'estimated',
+            'Reasoned from a real but partial or historical measurement — a probe run once during development, not re-checked on this load.',
+          ],
+        ].map(([term, meaning]) => (
+          <div key={term} className="mb-2 grid grid-cols-[5.5rem_1fr] gap-x-3">
+            <dt>
+              <MetricBasisMark basis={term as 'observed' | 'estimated' | 'targeted'} />
+            </dt>
+            <dd className="font-serif text-caption text-paper-mid">{meaning}</dd>
+          </div>
+        ))}
+        <div className="grid grid-cols-[5.5rem_1fr] gap-x-3">
+          <dt className="font-mono text-micro font-medium tracking-wide text-inferred">gap</dt>
+          <dd className="font-serif text-caption text-paper-mid">
+            Not assessed. Stated as a gap and left without a number, because a
+            figure here would need a labelled evaluation set that does not exist.
+          </dd>
+        </div>
+      </dl>
 
       {/* ---- 01 the pipeline, right now -------------------------------- */}
       <Section
@@ -195,33 +266,46 @@ export default function Validation({ onBack }: { onBack: () => void }) {
         )}
       </Section>
 
-      {/* ---- 02 citation coverage --------------------------------------- */}
+      {/* ---- 02 citation coverage ---------------------------------------
+       * Three different kinds of statement used to sit under one "100%".
+       * They are separated here because conflating them is exactly the move
+       * this page exists to refuse: what the code cannot do otherwise, what
+       * one run actually did, and what nobody has evaluated. */}
       <Section
         title="Citation coverage"
-        lede="Every claim in every real Brief passes through the same validator before a reader sees it — this is the code contract, not a sampled rate."
+        lede="Three separate questions, kept apart: what the code structurally prevents, what a real run measured, and what cannot be assessed without a labelled evaluation set."
       >
+        <Kind>1 · What the code structurally prevents</Kind>
         <Metric
-          label="Enforced coverage"
-          value="100%"
+          label="Unsourced figures that can reach a reader"
+          value="0, by construction"
           basis="targeted"
-          detail="A chain link claiming to be retrieved must cite a supplied source or it is dropped; a quote must appear verbatim in the source it names or it is dropped; a figure not present in any supplied source is redacted from the prose in place. This is lib/validate.ts running on every Brief, not a target this project is working toward."
+          detail="Not a rate and not a sample: three rules in lib/validate.ts run on every Brief, and a claim breaking one does not survive to be rendered. A chain link marked retrieved that cites no supplied source is dropped. A quote that is not verbatim in the source it names is dropped. A figure appearing in no supplied source is struck from the prose in place and the removal is shown."
         />
+        <p className="mt-2 border-l-2 border-rule-strong pl-3 font-serif text-caption text-paper-mid">
+          What this is not: a claim that every sentence carries a footnote. An
+          inferred link cites nothing <em>by design</em> — it is reasoning, not
+          retrieval, and it is kept and labelled inference rather than dropped.
+          The guarantee is about traceability of what is presented as fact, and
+          it says nothing about whether a surviving claim is correct.
+        </p>
 
+        <Kind>2 · What was measured, on which run</Kind>
         {demo.at === 'ready' && (
           <Metric
             label="Claims kept in one captured run"
-            value={`${demo.data.validation.chainKept + demo.data.validation.exposuresKept + demo.data.validation.quotesKept} of ${demo.data.validation.chainKept + demo.data.validation.chainDropped + demo.data.validation.exposuresKept + demo.data.validation.exposuresDropped + demo.data.validation.quotesKept + demo.data.validation.quotesDropped} claims kept`}
+            value={`${demo.data.validation.chainKept + demo.data.validation.exposuresKept + demo.data.validation.quotesKept} of ${demo.data.validation.chainKept + demo.data.validation.chainDropped + demo.data.validation.exposuresKept + demo.data.validation.exposuresDropped + demo.data.validation.quotesKept + demo.data.validation.quotesDropped}`}
             basis="observed"
-            detail={`${demo.data.captured?.model ?? 'model'}, captured ${demo.data.captured ? new Date(demo.data.captured.capturedAt).toLocaleDateString() : ''} — one dated run against a real ${demo.data.sources[0]?.publisher ?? 'article'} story, linked below. Zero rejections in this run means the model asked for nothing the validator had to remove, not that removal was never tested.`}
+            detail={`${demo.data.captured?.model ?? 'model'}, captured ${demo.data.captured ? new Date(demo.data.captured.capturedAt).toLocaleDateString() : ''} against a real ${demo.data.sources[0]?.publisher ?? 'article'} story. One run — n=1, not an average, and not a rate over production traffic, which this deployment does not record. Zero rejections here means the model asked for nothing that had to be removed on this occasion, not that removal goes untested.`}
           />
         )}
 
         {checks.at === 'ready' && (
           <Metric
-            label="Adversarial fixture"
-            value={`${checks.data.validation.chainDropped + checks.data.validation.exposuresDropped + checks.data.validation.quotesDropped} rejected`}
+            label="Rejections on the adversarial fixture"
+            value={`${checks.data.validation.chainDropped + checks.data.validation.exposuresDropped + checks.data.validation.quotesDropped}`}
             basis="observed"
-            detail="A model output written deliberately to break every rule once, run through the same validator just now. This is where removal is actually exercised — open it below to read each rejection next to what was planted."
+            detail="A model output written deliberately to break every rule once, run through the same validator when this page loaded. Deterministic rather than sampled: it demonstrates that removal works, and is not evidence about how often removal is needed."
           />
         )}
 
@@ -230,6 +314,16 @@ export default function Validation({ onBack }: { onBack: () => void }) {
             Watch the checks reject a deliberately bad Brief →
           </a>
         </p>
+
+        <Kind>3 · What needs a labelled evaluation set</Kind>
+        <Gap title="Whether the claims that survive are right.">
+          Traceable is not the same as correct. Nothing here establishes that a
+          chain link names the mechanism that actually operated, that an
+          exposure points the right way, or that the reasoning would hold up to
+          a domain expert. Answering that needs a set of Briefs scored against
+          human judgement. No such set exists for this project, so no number is
+          offered in its place.
+        </Gap>
       </Section>
 
       {/* ---- 03 report latency -------------------------------------------- */}
@@ -272,17 +366,16 @@ export default function Validation({ onBack }: { onBack: () => void }) {
           basis="estimated"
           detail="A one-time development-time check (lib/match.ts via /api/overnight?recall=1) ran the matcher over each of the 18 holdings' own ticker feeds and read every miss by hand. No missing alias was found. This was not re-run for this deployment and is not continuously monitored, so it is reported as a historical estimate, not a live number."
         />
-        <div className="mt-3 border-l-2 border-inferred/40 pl-3">
-          <p className="font-serif text-caption text-inferred">
-            What is not measured: a false-positive rate against a
-            human-judged sample of matched stories. That requires a labelled
-            dataset this project does not have. Every direct match is a
-            standalone-token string match the reader can verify by opening
-            the source themselves — which is the mitigation in place — but
-            "checkable" is not the same claim as "measured never wrong", and
-            this report will not present it as one.
-          </p>
-        </div>
+        <Kind>What needs a labelled evaluation set</Kind>
+        <Gap title="The false-positive rate itself.">
+          Scoring precision means someone judging, story by story, whether a
+          match was really about the holding. That needs a labelled sample
+          this project does not have. What stands in its place is structural,
+          not statistical: every direct match is a standalone-token string
+          match the reader can open the source and check. Checkable is a
+          weaker claim than measured, and it is not presented as the stronger
+          one.
+        </Gap>
       </Section>
 
       {report.at === 'ready' && (
