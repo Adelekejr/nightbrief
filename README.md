@@ -335,8 +335,14 @@ never implies an understanding that is not there.
 ```
 npm test           # 65 unit tests — the validator, matcher, universe, routing
 npm run typecheck
-npm run build && npm run test:browser   # 51 browser checks, phone and desktop
+npm run build && npm run test:browser   # 54 checks × 2 device profiles = 108 runs
 ```
+
+**Counting them honestly:** 54 distinct browser checks, each run twice — once
+on a Pixel 7 profile and once on desktop — for 108 runs in total. Of those, 105
+execute and pass and 3 are skipped by design, being phone-only checks (thumb
+target size, sideways scroll, masthead reach) that do not apply to the desktop
+profile. Zero failures.
 
 The browser checks exist because every defect a reader has had to report on
 this project was invisible to the type checker and to the unit tests: a
@@ -344,6 +350,12 @@ control that rendered but did nothing, a colour pair that only fails to the
 eye, state that only diverged after navigation. They run against a real
 Chromium on a Pixel 7 viewport and a desktop one, with the API stubbed, so a
 failure means the interface is wrong rather than that a publisher was slow.
+
+They also cover the **cold link**: `#/example` and `#/checks` opened directly
+in a browser that has never seen the site, with no saved state — the way a
+reader arriving from a submission form or a shared link reaches them. Both
+routes have rendered blank in this project's history and both were fixed; the
+cold-link checks are what keep them fixed.
 
 They cover navigation (the masthead reaches the desk from anywhere and is
 never dead; clearing the portfolio leaves nothing behind, including on disk;
