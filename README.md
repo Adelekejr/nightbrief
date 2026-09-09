@@ -41,33 +41,56 @@ not tell anyone what to buy or sell. The human reads the reasoning and decides.
 - **Gaps are shown.** What the tool does not know is a permanent section of
   every brief, never an empty one.
 
-## Status
+## How it works
 
-The vertical slice runs end to end: a news item and a list of holdings go in,
-and a brief comes out with its reasoning chain, sources, confidence and gaps.
+**Name your holdings.** Nightdesk ranks everything that broke while New York
+was shut against them, and reports how many were touched.
+
+**Open a Brief.** One event, investigated: what happened, what the source
+actually says, how the effect travels from the event to your holdings, which
+are exposed and in which direction, how far to trust it, and what the evidence
+cannot settle.
+
+Ranking runs in two layers that never merge:
+
+- **Named** — the story names the holding. A string match, checkable by the
+  reader against the headline, reported as fact.
+- **Inferred** — the story never names it, but a model judged a real mechanism.
+  Reported as inference.
+
+The second layer is the product's thesis, not a garnish. The best Brief here
+came from a story about TSMC and ASML that never mentions Nvidia; keyword
+ranking alone would have scored it zero against a portfolio holding Nvidia.
+
+If the inference layer is rate limited, the named layer still stands and the
+interface says the indirect pass was unavailable.
+
+## Status
 
 | Component | State |
 | --- | --- |
 | Public URL | live, no login |
+| Overnight ranking | live, two layers |
+| Brief pipeline | live |
+| Provenance validator | live, 36 tests |
+| Article body retrieval | live |
 | News feed | live, 6 of 11 sources answering |
 | rToken universe | 18 pairs, observed and dated |
-| Analysis pipeline | live |
-| Provenance validator | live, 19 tests |
-| Reading interface | live |
 | Worked example | captured, served instantly |
 | Prices | not wired — and nothing on screen claims to be one |
 
-**What is real on screen.** Headlines, publishers, timestamps and links are
-fetched live. The market-session labels are computed from those timestamps.
-The rToken list was observed from Bitget on a stated date. The reasoning is
-generated, labelled as generated, and every claim in it is checked against the
-sources before display. **No price appears anywhere in the interface**, because
-no price source is wired up yet — rather than a placeholder dressed as one.
+**What is real on screen.** Headlines, publishers, timestamps, links and
+article bodies are fetched live. Market-session labels are computed from those
+timestamps. The rToken list was observed from Bitget on a stated date. The
+reasoning is generated, labelled as generated, and every claim is checked
+against the sources before display. **No price appears anywhere**, because no
+price source is wired up — rather than a placeholder dressed as one.
 
 ## Endpoints
 
 | Route | Purpose |
 | --- | --- |
+| `/api/overnight` | Events ranked against a portfolio, in two labelled layers. |
 | `/api/feed` | Aggregated live news. `?probe=1` measures each source. |
 | `/api/universe` | The verified rToken listing and its provenance. |
 | `/api/analyze` | POST an item and holdings. `GET ?demo=1` runs the worked example live. |
