@@ -25,6 +25,18 @@ export type Source = {
   alternates?: string[]
 }
 
+/**
+ * Measured 2026-09-09 from the deployed function, not assumed.
+ *
+ * The US Treasury and Nasdaq feeds were removed after every candidate URL
+ * timed out. They were not merely useless: the sources are fetched together,
+ * so two that never answer set a six-second floor under every request.
+ *
+ * The Bureau of Labor Statistics stays listed even though it refuses this
+ * client on all four of its feed paths. It fails in well under a tenth of a
+ * second, so it costs nothing, and the interface reports it as unavailable —
+ * which is more honest than quietly dropping a source a reader might expect.
+ */
 export const SOURCES: Source[] = [
   {
     id: 'fed-press',
@@ -53,28 +65,10 @@ export const SOURCES: Source[] = [
   {
     id: 'bea-news',
     publisher: 'US Bureau of Economic Analysis',
-    feed: 'https://www.bea.gov/rss.xml',
+    feed: 'https://apps.bea.gov/rss/rss.xml',
     homepage: 'https://www.bea.gov/news/current-releases',
     kind: 'macro',
     rationale: 'GDP and PCE inflation, the Fed’s preferred gauge.',
-    alternates: [
-      'https://www.bea.gov/rss/news-release-rss.xml',
-      'https://apps.bea.gov/rss/rss.xml',
-      'https://www.bea.gov/news/rss.xml',
-    ],
-  },
-  {
-    id: 'treasury-press',
-    publisher: 'US Treasury',
-    feed: 'https://home.treasury.gov/rss/press.xml',
-    homepage: 'https://home.treasury.gov/news/press-releases',
-    kind: 'macro',
-    rationale: 'Sanctions and tariff actions, which move sectors rather than single names.',
-    alternates: [
-      'https://home.treasury.gov/rss/press-releases.xml',
-      'https://home.treasury.gov/news/press-releases/feed',
-      'https://home.treasury.gov/system/files/126/press-releases.xml',
-    ],
   },
   {
     id: 'cnbc-top',
@@ -101,18 +95,6 @@ export const SOURCES: Source[] = [
     rationale: 'Fast headlines, often the first English write-up of an overnight move.',
   },
   {
-    id: 'nasdaq-markets',
-    publisher: 'Nasdaq',
-    feed: 'https://www.nasdaq.com/feed/rssoutbound?category=Markets',
-    homepage: 'https://www.nasdaq.com/news-and-insights/markets',
-    kind: 'markets',
-    rationale: 'Exchange-side commentary on listed names.',
-    alternates: [
-      'https://www.nasdaq.com/feed/rssoutbound?category=Markets',
-      'https://www.nasdaq.com/feed/nasdaq-original/rss.xml',
-    ],
-  },
-  {
     id: 'yahoo-market',
     publisher: 'Yahoo Finance',
     feed: 'https://feeds.finance.yahoo.com/rss/2.0/headline?s=^GSPC&region=US&lang=en-US',
@@ -130,17 +112,13 @@ export const SOURCES: Source[] = [
       'European decisions land during the African and Asian working day and transmit to US futures long before the US open.',
   },
   {
-    id: 'sec-litigation',
+    id: 'sec-press',
     publisher: 'US SEC',
-    feed: 'https://www.sec.gov/rss/litigation/litreleases.xml',
-    homepage: 'https://www.sec.gov/litigation/litreleases',
+    feed: 'https://www.sec.gov/news/pressreleases.rss',
+    homepage: 'https://www.sec.gov/news/pressreleases',
     kind: 'regulatory',
-    rationale: 'Enforcement actions against listed issuers.',
-    alternates: [
-      'https://www.sec.gov/news/pressreleases.rss',
-      'https://www.sec.gov/rss/news/press.xml',
-      'https://www.sec.gov/cgi-bin/browse-edgar?action=getcurrent&type=8-K&output=atom',
-    ],
+    rationale:
+      'Enforcement and rulemaking affecting listed issuers. The litigation feed refuses this client; the press feed answers.',
   },
 ]
 
