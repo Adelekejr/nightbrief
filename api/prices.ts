@@ -40,6 +40,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       .map((l) => ({ ...l.close, symbol: underlying.get(l.close.ticker) })),
     unavailable: looked
       .filter((l): l is Extract<typeof l, { ok: false }> => !l.ok)
-      .map((l) => ({ ticker: l.ticker, symbol: underlying.get(l.ticker), reason: l.reason })),
+      .map((l) => ({
+        ticker: l.ticker,
+        symbol: underlying.get(l.ticker),
+        reason: l.reason,
+        sample: req.query.debug === '1' ? l.sample : undefined,
+      })),
   })
 }

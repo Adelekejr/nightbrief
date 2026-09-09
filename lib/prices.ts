@@ -22,7 +22,7 @@ export type Close = {
 
 export type PriceLookup =
   | { ok: true; close: Close }
-  | { ok: false; ticker: string; reason: string }
+  | { ok: false; ticker: string; reason: string; sample?: string }
 
 const CSV = (ticker: string) =>
   `https://stooq.com/q/d/l/?s=${encodeURIComponent(ticker.toLowerCase())}.us&i=d`
@@ -40,7 +40,10 @@ export function lastCloseFromCsv(csv: string, ticker: string): PriceLookup {
   const dateAt = header.indexOf('date')
   const closeAt = header.indexOf('close')
   if (dateAt === -1 || closeAt === -1) {
-    return { ok: false, ticker, reason: 'unexpected columns' }
+    // Carry a slice of what actually arrived. A public price feed answering
+    // 200 with something other than CSV is usually saying something useful,
+    // like that it has throttled the caller.
+    return { ok: false, ticker, reason: 'unexpected columns', sample: csv.slice(0, 200) }
   }
 
   const cells = lines[lines.length - 1].split(',')
