@@ -124,3 +124,22 @@ export const SOURCES: Source[] = [
 
 export const byId = (id: string): Source | undefined =>
   SOURCES.find((s) => s.id === id)
+
+/**
+ * A feed of news filed against one ticker, rather than whatever the market
+ * page happened to lead with.
+ *
+ * General market feeds cover the largest names well and the rest barely at
+ * all: a Lumentum or Nebius story rarely reaches CNBC's top stories, so a
+ * holder of those positions can see an empty desk on a night when there is
+ * real news about what they hold. This closes that gap for exactly the
+ * tickers a reader owns.
+ */
+export const tickerFeed = (ticker: string): Source => ({
+  id: `ticker-${ticker.toLowerCase()}`,
+  publisher: 'Yahoo Finance',
+  feed: `https://feeds.finance.yahoo.com/rss/2.0/headline?s=${encodeURIComponent(ticker)}&region=US&lang=en-US`,
+  homepage: `https://finance.yahoo.com/quote/${encodeURIComponent(ticker)}`,
+  kind: 'markets',
+  rationale: `News filed against ${ticker.toUpperCase()} itself.`,
+})

@@ -1,5 +1,5 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node'
-import { SOURCES } from '../lib/sources.js'
+import { SOURCES, tickerFeed } from '../lib/sources.js'
 import { fetchSource, type FeedItem } from '../lib/rss.js'
 import { sessionAt } from '../lib/market.js'
 import { resolve, type RToken } from '../lib/universe.js'
@@ -84,7 +84,34 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return
   }
 
+  // Measured rather than asserted: whether Yahoo serves per-ticker feeds to a
+  // datacentre IP, and what they cost, decides whether they are worth adding.
+  if (req.query.probeTickers === '1') {
+    const started = Date.now()
+    const tried = await Promise.all(
+      held.map(async (t) => {
+        const at = Date.now()
+        const { result, items } = await fetchSource(tickerFeed(t.underlying), 5000)
+        return {
+          symbol: t.symbol,
+          ticker: t.underlying,
+          ok: result.ok,
+          status: result.status,
+          ms: Date.now() - at,
+          items: result.itemCount,
+          sampleTitles: items.slice(0, 2).map((i) => i.title),
+          sampleLinks: items.slice(0, 2).map((i) => i.link),
+        }
+      }),
+    )
+    res.setHeader('cache-control', 'no-store')
+    res.status(200).json({ probedAt: new Date().toISOString(), wallMs: Date.now() - started, tried })
+    return
+  }
+
+  const feedsAt = Date.now()
   const settled = await Promise.all(SOURCES.map((s) => fetchSource(s)))
+  const feedsMs = Date.now() - feedsAt
   const liveSources = settled.filter((s) => s.result.ok && s.result.itemCount > 0)
   const cutoff = Date.now() - WINDOW_HOURS * 3_600_000
 
@@ -101,6 +128,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   let triageDetail: string | undefined
   let rawLinks = 0
   let unknownSymbols: string[] = []
+  const triageAt = Date.now()
 
   if (hasKey() && recent.length > 0) {
     const holdingsBlock = held
@@ -140,6 +168,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
   }
 
+  const triageMs = Date.now() - triageAt
   const ranked = rank(recent, held, triage)
   const touched = new Set(ranked.flatMap((e) => e.symbols))
 
@@ -149,6 +178,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     checkedAt: new Date().toISOString(),
     marketNow: sessionAt(new Date()),
     windowHours: WINDOW_HOURS,
+    timing: { feedsMs, triageMs },
     holdings: {
       verified: held.map((t) => ({ symbol: t.symbol, name: t.name })),
       unverified,
