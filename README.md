@@ -2,11 +2,7 @@
 
 **An after-hours research desk for tokenized US stocks.**
 
-**Live: https://nightbrief-adelekejrhammed-5250.vercel.app** — no account, no setup.
-
-The project was previously called Nightdesk. Its old host,
-`nightdesk-nine.vercel.app`, still resolves to this same build so that any link
-already shared keeps working, but it is retired and should not be used.
+**Live: https://nightbrief.vercel.app** — no account, no setup.
 
 Three things worth opening, in order:
 
