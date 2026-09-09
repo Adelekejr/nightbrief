@@ -29,6 +29,16 @@ Nightdesk is a **research tool**. It places no orders, holds no exchange
 credentials, touches no funds, and has no execution path of any kind. It does
 not tell anyone what to buy or sell. The human reads the reasoning and decides.
 
+## Watch the checks work
+
+"It never fabricates" is a claim, so the app puts the claim on trial at
+`#/checks`. A deliberately corrupted model output — a citation to a source
+never supplied, a figure in no article, an exposure to a holding the reader
+never named, a plausible quote that is not in the text — goes through the same
+validator every Brief passes through, against the same real article the worked
+example uses. Five claims are removed and one figure struck from the prose, and
+the page shows the validator's own reasons for each.
+
 ## Ground rules the code enforces
 
 - **No fabricated data.** A price, figure, date or quote that was not retrieved
@@ -105,6 +115,8 @@ measure and was treated as a closed door, not something to work around.
 | `/api/universe` | The verified rToken listing and its provenance. |
 | `/api/analyze` | POST an item and holdings. `GET ?demo=1` runs the worked example live. |
 | `/api/models` | ListModels. `?generate=1` proves the key can actually generate. |
+| `/api/prices` | Last close of the underlying shares, dated and attributed. |
+| `/api/checks` | Runs a deliberately corrupted output through the real validator. |
 | `/api/health` | Whether the key is configured, as a boolean only. |
 
 ## Model

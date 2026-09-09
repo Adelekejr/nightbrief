@@ -290,6 +290,15 @@ export default function BriefView({ data }: { data: AnalysisResponse }) {
           </ul>
         )}
 
+        <p className="mt-3">
+          <a
+            href="#/checks"
+            className="font-serif text-[14px] text-signal underline underline-offset-4"
+          >
+            Watch the checks reject a deliberately bad Brief →
+          </a>
+        </p>
+
         <div className="mt-6">
           <h3 className="mb-2 font-serif text-[13px] font-semibold tracking-wide text-paper/50">
             What the confidence marks mean
