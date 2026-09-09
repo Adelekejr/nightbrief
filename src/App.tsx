@@ -87,6 +87,10 @@ export default function App() {
   // "Change holdings" a button that silently did nothing.
   useEffect(() => {
     if (route.name === "gate" && holdings.length > 0) navigate("overnight");
+    // A desk with no portfolio behind it has nothing to show. Anything still
+    // pointing at it after a clear — a Brief's back link, a stale hash — goes
+    // to the gate rather than rendering an empty screen.
+    if (route.name === "overnight" && holdings.length === 0) navigate("gate");
   }, [route.name, holdings.length]);
 
   const runBrief = useCallback(
@@ -136,6 +140,17 @@ export default function App() {
         }),
       );
   }, []);
+
+  /**
+   * Clearing is immediate and total: the saved portfolio goes, and the desk
+   * built from it goes with it. Keeping a desk for holdings the reader has
+   * just cleared would be showing them somebody else's answer.
+   */
+  const clearHoldings = () => {
+    saveHoldings([])
+    setHoldings([])
+    setOvernight({ at: 'idle' })
+  }
 
   const commitHoldings = (picked: string[]) => {
     saveHoldings(picked);
@@ -246,7 +261,7 @@ export default function App() {
         <main className={reading ? "" : "mt-8"}>
           {route.name === "gate" && (
             <>
-              <PortfolioGate initial={holdings} onReady={commitHoldings} />
+              <PortfolioGate initial={holdings} onReady={commitHoldings} onClear={clearHoldings} />
               <div className="mt-8 border-t border-rule pt-6">
                 <p className="font-serif text-caption text-paper-mid">
                   Or read a complete worked example first — a real story that

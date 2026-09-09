@@ -14,11 +14,18 @@ export default function PortfolioGate({
   initial,
   onReady,
   onCancel,
+  onClear,
   editing = false,
 }: {
   initial: string[]
   onReady: (holdings: string[]) => void
   onCancel?: () => void
+  /**
+   * Clearing takes effect immediately rather than waiting to be confirmed.
+   * "Clear all" means the reader is starting over, and a selection that
+   * reappears the moment they leave the screen did not clear anything.
+   */
+  onClear?: () => void
   /** Revisiting an existing portfolio rather than setting one for the first time. */
   editing?: boolean
 }) {
@@ -52,8 +59,11 @@ export default function PortfolioGate({
           {picked.length > 0 && (
             <button
               type="button"
-              onClick={() => setPicked([])}
-              className="font-serif text-caption text-paper-low underline underline-offset-2 hover:text-signal"
+              onClick={() => {
+                setPicked([])
+                onClear?.()
+              }}
+              className="font-serif text-caption text-paper-mid underline underline-offset-2 hover:text-signal"
             >
               Clear all
             </button>
@@ -99,7 +109,7 @@ export default function PortfolioGate({
 
         <SecondaryButton onClick={() => onReady(SAMPLE)}>Use the sample portfolio</SecondaryButton>
 
-        {onCancel && (
+        {onCancel && picked.length > 0 && (
           <button
             type="button"
             onClick={onCancel}
