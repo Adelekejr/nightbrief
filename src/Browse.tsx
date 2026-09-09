@@ -1,32 +1,36 @@
-import { useEffect, useState } from 'react'
-import type { FeedItem, FeedResponse } from './types'
-import { Heading, Mono, TimeStamp } from './ui'
+import { useEffect, useState } from "react";
+import type { FeedItem, FeedResponse } from "./types";
+import { Heading, Mono, TimeStamp } from "./ui";
 
 export type BriefRequest = {
-  title: string
-  text: string
-  publisher?: string
-  url?: string
-  publishedAt?: string
-}
+  title: string;
+  text: string;
+  publisher?: string;
+  url?: string;
+  publishedAt?: string;
+};
 
 /**
  * The secondary surface. The ranked overnight desk answers "does any of this
  * reach me"; this is for when the reader already knows what they want to look
  * at, or wants to hand Nightbrief something it did not fetch.
  */
-export default function Browse({ onOpen }: { onOpen: (req: BriefRequest) => void }) {
-  const [mode, setMode] = useState<'feed' | 'paste'>('feed')
-  const [feed, setFeed] = useState<FeedResponse | null>(null)
-  const [failed, setFailed] = useState(false)
-  const [pasted, setPasted] = useState('')
+export default function Browse({
+  onOpen,
+}: {
+  onOpen: (req: BriefRequest) => void;
+}) {
+  const [mode, setMode] = useState<"feed" | "paste">("feed");
+  const [feed, setFeed] = useState<FeedResponse | null>(null);
+  const [failed, setFailed] = useState(false);
+  const [pasted, setPasted] = useState("");
 
   useEffect(() => {
-    fetch('/api/feed')
+    fetch("/api/feed")
       .then((r) => (r.ok ? r.json() : Promise.reject(new Error())))
       .then(setFeed)
-      .catch(() => setFailed(true))
-  }, [])
+      .catch(() => setFailed(true));
+  }, []);
 
   const openItem = (item: FeedItem) =>
     onOpen({
@@ -35,26 +39,28 @@ export default function Browse({ onOpen }: { onOpen: (req: BriefRequest) => void
       publisher: item.publisher,
       url: item.link,
       publishedAt: item.publishedAt ?? undefined,
-    })
+    });
 
   return (
     <div>
       <div className="mb-5 flex gap-4 border-b border-rule">
-        {(['feed', 'paste'] as const).map((m) => (
+        {(["feed", "paste"] as const).map((m) => (
           <button
             key={m}
             type="button"
             onClick={() => setMode(m)}
             className={`-mb-px border-b-2 pb-2 font-serif text-caption ${
-              mode === m ? 'border-signal text-paper' : 'border-transparent text-paper-low'
+              mode === m
+                ? "border-signal text-paper"
+                : "border-transparent text-paper-low"
             }`}
           >
-            {m === 'feed' ? 'Everything fetched' : 'Something else'}
+            {m === "feed" ? "Everything fetched" : "Something else"}
           </button>
         ))}
       </div>
 
-      {mode === 'paste' ? (
+      {mode === "paste" ? (
         <div>
           <textarea
             value={pasted}
@@ -70,7 +76,12 @@ export default function Browse({ onOpen }: { onOpen: (req: BriefRequest) => void
           <button
             type="button"
             disabled={pasted.trim().length < 20}
-            onClick={() => onOpen({ title: pasted.trim().slice(0, 160), text: pasted.trim() })}
+            onClick={() =>
+              onOpen({
+                title: pasted.trim().slice(0, 160),
+                text: pasted.trim(),
+              })
+            }
             className="mt-4 w-full border border-signal bg-signal py-3.5 font-serif text-lede font-semibold text-signal-on hover:border-signal-deep hover:bg-signal-deep disabled:border-rule disabled:bg-transparent disabled:text-paper-low"
           >
             Investigate this
@@ -86,41 +97,72 @@ export default function Browse({ onOpen }: { onOpen: (req: BriefRequest) => void
       ) : (
         <div>
           <p className="mb-4 font-mono text-micro text-paper-low">
-            {feed.itemCount} stories · live from{' '}
-            {feed.liveSources.map((s) => s.publisher).join(', ')}
+            {feed.itemCount} stories
+            {/* Without the guard this reads "live from" followed by nothing
+                when every source is down — broken copy in exactly the state
+                a reader most needs to trust what they are being told. */}
+            {feed.liveSources.length > 0 && (
+              <>
+                {" "}
+                · live from{" "}
+                {feed.liveSources.map((s) => s.publisher).join(", ")}
+              </>
+            )}
             {feed.unavailableSources.length > 0 && (
-              <> · unreachable: {feed.unavailableSources.map((s) => s.publisher).join(', ')}</>
+              <>
+                {" "}
+                · unreachable:{" "}
+                {feed.unavailableSources.map((s) => s.publisher).join(", ")}
+              </>
             )}
           </p>
 
-          <Heading>Not filtered against your holdings</Heading>
+          {feed.items.length === 0 ? (
+            <p className="border-l-2 border-rule pl-3 font-serif text-body text-inferred">
+              No stories came back this time.{" "}
+              {feed.liveSources.length === 0
+                ? "None of the sources answered, so this is a gap in what could be fetched rather than a quiet news cycle."
+                : "The sources answered and had nothing inside the window — which is a finding about the last day and a half, not a fault."}
+            </p>
+          ) : (
+            <>
+              <Heading>Not filtered against your holdings</Heading>
 
-          <ul>
-            {feed.items.map((item) => (
-              <li key={item.id}>
-                <button
-                  type="button"
-                  onClick={() => openItem(item)}
-                  className="w-full border-t border-rule py-3.5 text-left hover:bg-paper/[0.02]"
-                >
-                  <span className="flex flex-wrap items-baseline gap-x-2">
-                    <Mono className="text-micro text-paper-low">{item.publisher}</Mono>
-                    {item.session?.closed && (
-                      <Mono className="text-micro text-signal">market shut</Mono>
-                    )}
-                  </span>
-                  <span className="mt-1 block font-serif text-body text-paper">
-                    {item.title}
-                  </span>
-                  <span className="mt-1 block">
-                    <TimeStamp iso={item.publishedAt} session={item.session?.label} />
-                  </span>
-                </button>
-              </li>
-            ))}
-          </ul>
+              <ul>
+                {feed.items.map((item) => (
+                  <li key={item.id}>
+                    <button
+                      type="button"
+                      onClick={() => openItem(item)}
+                      className="w-full border-t border-rule py-3.5 text-left hover:bg-paper/[0.02]"
+                    >
+                      <span className="flex flex-wrap items-baseline gap-x-2">
+                        <Mono className="text-micro text-paper-low">
+                          {item.publisher}
+                        </Mono>
+                        {item.session?.closed && (
+                          <Mono className="text-micro text-signal">
+                            market shut
+                          </Mono>
+                        )}
+                      </span>
+                      <span className="mt-1 block font-serif text-body text-paper">
+                        {item.title}
+                      </span>
+                      <span className="mt-1 block">
+                        <TimeStamp
+                          iso={item.publishedAt}
+                          session={item.session?.label}
+                        />
+                      </span>
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            </>
+          )}
         </div>
       )}
     </div>
-  )
+  );
 }

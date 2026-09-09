@@ -48,6 +48,19 @@ export default function Closes({ symbols }: { symbols: string[] }) {
   const byDate = new Map<string, Close[]>()
   for (const c of data.closes) byDate.set(c.date, [...(byDate.get(c.date) ?? []), c])
 
+  // The provider answered and had nothing for any of these symbols. Rendering
+  // an empty block under a heading is the blank screen in miniature, and it
+  // leaves the reader unable to tell "no price" from "still loading".
+  if (data.closes.length === 0 && data.unavailable.length === 0) {
+    return (
+      <p className="font-serif text-caption text-inferred">
+        No closing prices came back for these holdings. The provider answered
+        and had none — which is different from a price of zero, and different
+        again from a request that failed.
+      </p>
+    )
+  }
+
   return (
     <div>
       {data.closes.length > 0 && (

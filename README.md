@@ -335,7 +335,7 @@ never implies an understanding that is not there.
 ```
 npm test           # 65 unit tests — the validator, matcher, universe, routing
 npm run typecheck
-npm run build && npm run test:browser   # 37 browser checks, phone and desktop
+npm run build && npm run test:browser   # 51 browser checks, phone and desktop
 ```
 
 The browser checks exist because every defect a reader has had to report on
@@ -349,10 +349,12 @@ They cover navigation (the masthead reaches the desk from anywhere and is
 never dead; clearing the portfolio leaves nothing behind, including on disk;
 no route renders a blank screen), contrast (every visible run of text is
 measured against its composited background and held to WCAG AA, plus a check
-that nothing uses a shadow, gradient or blur to carry meaning), and access
-(every control is named, the whole gate is keyboard-drivable, the focus ring
-is drawn, nothing moves when motion is declined, targets clear WCAG 2.2's
-24px and navigation clears 40px, and no screen scrolls sideways on a phone).
+that nothing uses a shadow, gradient or blur to carry meaning), access (every
+control is named, the whole gate is keyboard-drivable, the focus ring is
+drawn, nothing moves when motion is declined, targets clear WCAG 2.2's 24px
+and navigation clears 40px, and no screen scrolls sideways on a phone), and
+**degraded states** — every source failing one at a time, empty results, a
+slow answer, and content longer than the column it sits in.
 
 Four defects were found and fixed the first time they ran:
 
@@ -364,6 +366,8 @@ Four defects were found and fixed the first time they ran:
 | the wordmark was a 24px-tall tap target on a phone, and `Clear all` 20px | both given real hit areas without changing the layout |
 | `#/checks` was linked from every Brief but never wired into the router — the link went to a blank screen | route added, and every route is now in the blank-screen check |
 | `#/checks` rendered a nineteen-character loading line in place of the whole page until its fetch returned | the framing renders immediately; only the counts wait |
+| when the price provider answered with nothing, the closes block rendered an empty div under its heading — indistinguishable from still loading | it now says no prices came back, and that this differs from a price of zero and from a failed request |
+| an empty feed rendered a heading over an empty list, under copy reading "0 stories · live from" with nothing after it | the source clause is conditional, and an empty feed states whether the sources answered and had nothing or did not answer at all |
 
 ## Stack
 
