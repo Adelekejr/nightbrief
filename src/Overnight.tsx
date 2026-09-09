@@ -1,3 +1,4 @@
+import Closes from './Closes'
 import { ago } from './states'
 import { Heading, Mono, TimeStamp } from './ui'
 import type { Session } from './types'
@@ -176,11 +177,9 @@ export default function Overnight({
           Highlighted holdings were reached by at least one event. The rest were
           checked and not reached.
         </p>
-        <p className="mt-3 font-serif text-[13px] leading-relaxed text-paper/45">
-          An rToken tracks the price of a US-listed stock. Holding one is not
-          the same as owning the share, and the two can move apart — especially
-          overnight, when the underlying market is shut and liquidity is thin.
-        </p>
+        <div className="mt-5">
+          <Closes symbols={holdings.verified.map((h) => h.symbol)} />
+        </div>
 
         <div className="mt-5 flex flex-col gap-3">
           <button

@@ -77,14 +77,24 @@ interface says the indirect pass was unavailable.
 | News feed | live, 6 of 11 sources answering |
 | rToken universe | 18 pairs, observed and dated |
 | Worked example | captured, served instantly |
-| Prices | not wired — and nothing on screen claims to be one |
+| Prices | live — closing price of the underlying share, dated |
 
 **What is real on screen.** Headlines, publishers, timestamps, links and
 article bodies are fetched live. Market-session labels are computed from those
 timestamps. The rToken list was observed from Bitget on a stated date. The
 reasoning is generated, labelled as generated, and every claim is checked
-against the sources before display. **No price appears anywhere**, because no
-price source is wired up — rather than a placeholder dressed as one.
+against the sources before display.
+
+**Prices are real, dated, and carefully labelled.** They are the last closing
+price of the *underlying US-listed share*, from Yahoo Finance, shown with the
+trading date and the provider that answered. They are **not** live quotes and
+**not** rToken prices — an rToken trades around the clock and can move apart
+from the share it tracks, most of all while the US market is shut, which is
+exactly when this tool is used. The interface says so next to the numbers.
+
+Stooq was tried first and refused: it answers a datacentre IP with a
+JavaScript browser-verification page. That is an explicit anti-automation
+measure and was treated as a closed door, not something to work around.
 
 ## Endpoints
 

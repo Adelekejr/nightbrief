@@ -1,0 +1,88 @@
+import { useEffect, useState } from 'react'
+import type { Close, PricesResponse } from './types'
+import { Mono } from './ui'
+
+/**
+ * Last closing prices for the shares behind a set of rTokens.
+ *
+ * Two things this must never do: imply the figure is live, and imply it is the
+ * rToken's price. It is neither. Both the date and the distinction are stated
+ * next to the numbers rather than in a footnote somewhere else.
+ */
+export function useCloses(symbols: string[]) {
+  const [data, setData] = useState<PricesResponse | null>(null)
+  const [failed, setFailed] = useState(false)
+  const key = symbols.join(',')
+
+  useEffect(() => {
+    if (!key) return
+    let live = true
+
+    fetch(`/api/prices?holdings=${encodeURIComponent(key)}`)
+      .then((r) => (r.ok ? r.json() : Promise.reject(new Error())))
+      .then((body: PricesResponse) => live && setData(body))
+      .catch(() => live && setFailed(true))
+
+    return () => {
+      live = false
+    }
+  }, [key])
+
+  return { data, failed }
+}
+
+export default function Closes({ symbols }: { symbols: string[] }) {
+  const { data, failed } = useCloses(symbols)
+
+  if (failed) {
+    return (
+      <p className="font-serif text-[13px] leading-relaxed text-inferred">
+        Closing prices could not be fetched. None are shown rather than a stale
+        one being presented as current.
+      </p>
+    )
+  }
+
+  if (!data) return <Mono className="text-[10px] text-paper/35">fetching closes…</Mono>
+
+  const byDate = new Map<string, Close[]>()
+  for (const c of data.closes) byDate.set(c.date, [...(byDate.get(c.date) ?? []), c])
+
+  return (
+    <div>
+      {data.closes.length > 0 && (
+        <ul className="divide-y divide-rule border-y border-rule">
+          {data.closes.map((c) => (
+            <li key={c.symbol} className="flex items-baseline justify-between gap-4 py-2">
+              <Mono className="text-[12px] text-paper/70">
+                {c.symbol}
+                <span className="text-paper/35"> · {c.ticker}</span>
+              </Mono>
+              <Mono className="text-[12px] text-paper">
+                {c.close.toFixed(2)}
+                <span className="text-paper/35"> USD · {c.date}</span>
+              </Mono>
+            </li>
+          ))}
+        </ul>
+      )}
+
+      {data.unavailable.length > 0 && (
+        <p className="mt-2 font-mono text-[10px] leading-relaxed text-paper/40">
+          no close for {data.unavailable.map((u) => u.symbol ?? u.ticker).join(', ')} —{' '}
+          {data.unavailable[0].reason}
+        </p>
+      )}
+
+      {data.closes.length > 0 && (
+        <p className="mt-3 font-serif text-[13px] leading-relaxed text-paper/50">
+          Closing price of the <span className="text-paper/75">underlying US share</span>, from{' '}
+          {[...new Set(data.closes.map((c) => c.providerLabel))].join(' and ')}. Not a live quote,
+          and <span className="text-paper/75">not the rToken price</span> — an rToken trades around
+          the clock and can move apart from the share it tracks, most of all while the US market is
+          shut.
+        </p>
+      )}
+    </div>
+  )
+}

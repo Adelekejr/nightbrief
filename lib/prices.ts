@@ -18,6 +18,9 @@ export type Close = {
   close: number
   /** Trading date of that close, as the source gives it. */
   date: string
+  /** Which provider actually answered. Attribution follows the number. */
+  provider: string
+  providerLabel: string
 }
 
 export type PriceLookup =
@@ -73,6 +76,8 @@ export function lastCloseFromYahoo(body: string, ticker: string): PriceLookup {
         ticker: ticker.toUpperCase(),
         close: Math.round(close * 100) / 100,
         date: new Date(stamp * 1000).toISOString().slice(0, 10),
+        provider: 'yahoo-chart',
+        providerLabel: 'Yahoo Finance',
       },
     }
   }
@@ -110,7 +115,16 @@ export function lastCloseFromCsv(csv: string, ticker: string): PriceLookup {
     return { ok: false, ticker, reason: 'no usable date in the last row' }
   }
 
-  return { ok: true, close: { ticker: ticker.toUpperCase(), close, date } }
+  return {
+    ok: true,
+    close: {
+      ticker: ticker.toUpperCase(),
+      close,
+      date,
+      provider: 'stooq',
+      providerLabel: 'Stooq',
+    },
+  }
 }
 
 export async function fetchFrom(

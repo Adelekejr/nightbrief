@@ -1,4 +1,5 @@
 import { Marker, StageRail, StageSection } from './Chain'
+import Closes from './Closes'
 import type { AnalysisResponse } from './types'
 import { ago, ConfidenceLegend } from './states'
 import { ConfidenceMark, Mono, SampleStamp, SensitivityMark, SourceChip, TimeStamp } from './ui'
@@ -243,6 +244,14 @@ export default function BriefView({ data }: { data: AnalysisResponse }) {
           </ul>
         )}
       </StageSection>
+
+      {/* ---- where the shares last closed ------------------------------- */}
+      <section className="mt-8">
+        <h3 className="mb-3 font-serif text-[13px] font-semibold tracking-wide text-paper/50">
+          Where the underlying shares last closed
+        </h3>
+        <Closes symbols={data.holdings.verified.map((h) => h.symbol)} />
+      </section>
 
       {/* ---- 05 confidence -------------------------------------------------- */}
       <StageSection

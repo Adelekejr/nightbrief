@@ -49,11 +49,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   res.status(200).json({
     ok: true,
     fetchedAt: new Date().toISOString(),
-    source: { name: 'Stooq', url: 'https://stooq.com', kind: 'end-of-day close' },
+    kind: 'end-of-day close',
     meaning:
       'The last closing price of the US-listed share this rToken tracks. Not a live quote, and not the rToken price — an rToken trades 24/7 and can move apart from the share, especially while the US market is shut.',
     closes: looked
       .filter((l): l is Extract<typeof l, { ok: true }> => l.ok)
+      // Attribution travels with each figure: providers are tried in order, so
+      // two closes in the same response can come from different sources.
       .map((l) => ({ ...l.close, symbol: underlying.get(l.close.ticker) })),
     unavailable: looked
       .filter((l): l is Extract<typeof l, { ok: false }> => !l.ok)

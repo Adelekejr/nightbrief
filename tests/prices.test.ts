@@ -12,6 +12,41 @@ test('takes the closing price from the most recent row', () => {
   assert.equal(out.ok && out.close.close, 225.95)
   assert.equal(out.ok && out.close.date, '2026-09-08')
   assert.equal(out.ok && out.close.ticker, 'NVDA')
+  // Whoever answered has to be named on the figure itself.
+  assert.equal(out.ok && out.close.providerLabel, 'Stooq')
+})
+
+test('a Yahoo close is attributed to Yahoo, not to whoever was tried first', async () => {
+  const { lastCloseFromYahoo } = await import('../lib/prices.ts')
+  const body = JSON.stringify({
+    chart: {
+      result: [
+        {
+          timestamp: [1788854400, 1788940800],
+          indicators: { quote: [{ close: [223.4, 225.73] }] },
+        },
+      ],
+    },
+  })
+  const out = lastCloseFromYahoo(body, 'nvda')
+  assert.equal(out.ok && out.close.close, 225.73)
+  assert.equal(out.ok && out.close.providerLabel, 'Yahoo Finance')
+})
+
+test('a null latest bar falls back to the last real one', async () => {
+  const { lastCloseFromYahoo } = await import('../lib/prices.ts')
+  const body = JSON.stringify({
+    chart: {
+      result: [
+        {
+          timestamp: [1788854400, 1788940800],
+          indicators: { quote: [{ close: [223.4, null] }] },
+        },
+      ],
+    },
+  })
+  const out = lastCloseFromYahoo(body, 'nvda')
+  assert.equal(out.ok && out.close.close, 223.4, 'a forming session must not become a zero')
 })
 
 test('refuses a response with no data rows', () => {

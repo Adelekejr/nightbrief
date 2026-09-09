@@ -105,3 +105,21 @@ export type FeedResponse = {
   itemCount: number
   items: FeedItem[]
 }
+
+export type Close = {
+  symbol: string
+  ticker: string
+  close: number
+  date: string
+  provider: string
+  providerLabel: string
+}
+
+export type PricesResponse = {
+  ok: true
+  fetchedAt: string
+  kind: string
+  meaning: string
+  closes: Close[]
+  unavailable: Array<{ ticker: string; symbol?: string; reason: string }>
+}
