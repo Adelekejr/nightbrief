@@ -61,7 +61,7 @@ export default function BriefView({ data }: { data: AnalysisResponse }) {
       )}
 
       {data.holdings.unverified.length > 0 && (
-        <p className="mt-4 border-l-2 border-signal/40 pl-3 font-serif text-caption text-paper-mid">
+        <p className="mt-4 border-l-2 border-signal-deep pl-3 font-serif text-caption text-paper-mid">
           <Mono className="text-caption text-paper">
             {data.holdings.unverified.join(', ')}
           </Mono>{' '}
@@ -140,7 +140,7 @@ export default function BriefView({ data }: { data: AnalysisResponse }) {
         {brief.quotes.length > 0 ? (
           <ul className="mt-5 space-y-3">
             {brief.quotes.map((q, i) => (
-              <li key={i} className="border-l-2 border-signal/50 pl-3">
+              <li key={i} className="border-l-2 border-signal pl-3">
                 <p className="font-serif text-body text-paper">“{q.text}”</p>
                 <p className="mt-1 flex items-baseline gap-2">
                   <Marker kind="fact" />
@@ -185,7 +185,7 @@ export default function BriefView({ data }: { data: AnalysisResponse }) {
                 className={`mt-2 border-l-2 pl-3 font-serif text-body ${
                   step.basis === 'inferred'
                     ? 'border-inferred/30 text-inferred'
-                    : 'border-signal/40 text-paper'
+                    : 'border-signal-deep text-paper'
                 }`}
               >
                 {step.mechanism}

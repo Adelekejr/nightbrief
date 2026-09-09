@@ -18,13 +18,7 @@ type Async<T> =
   | { at: "ready"; data: T }
   | { at: "failed"; kind: string; reason: string };
 
-function Masthead({
-  session,
-  onHome,
-}: {
-  session: Session | null;
-  onHome: () => void;
-}) {
+function Masthead({ session }: { session: Session | null }) {
   const [now, setNow] = useState(() => new Date());
   useEffect(() => {
     const t = setInterval(() => setNow(new Date()), 30_000);
@@ -33,11 +27,6 @@ function Masthead({
 
   return (
     <header className="border-b border-rule pb-5">
-      <button type="button" onClick={onHome} className="text-left">
-        <h1 className="font-serif text-page font-semibold tracking-tight text-paper">
-          Nightbrief
-        </h1>
-      </button>
       <p className="mt-1 max-w-md font-serif text-caption text-paper-mid">
         Investigates what broke while the US market was shut, and works out
         which of your tokenized holdings it reaches.
@@ -192,7 +181,7 @@ export default function App() {
           <button
             type="button"
             onClick={() => navigate("overnight")}
-            className="mt-2 w-full border border-rule py-3 font-serif text-body text-paper-mid hover:border-paper/30"
+            className="mt-2 w-full border border-rule-strong py-3 font-serif text-body text-paper hover:border-paper-low"
           >
             Back to the overnight desk
           </button>
@@ -243,6 +232,7 @@ export default function App() {
         editing={editing}
         onHome={() => navigate(holdings.length ? "overnight" : "gate")}
         onEditHoldings={() => navigate("holdings")}
+        atHome={route.name === (holdings.length ? "overnight" : "gate")}
       />
 
       <div
@@ -250,10 +240,7 @@ export default function App() {
       >
         <div ref={top} />
         {!reading && (
-          <Masthead
-            session={session}
-            onHome={() => navigate(holdings.length ? "overnight" : "gate")}
-          />
+          <Masthead session={session} />
         )}
 
         <main className={reading ? "" : "mt-8"}>

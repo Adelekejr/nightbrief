@@ -104,7 +104,7 @@ export default function Checks({ onBack }: { onBack: () => void }) {
               <Mono className="text-micro text-paper-mid">{e.publisher}</Mono>
             </p>
             <p className="mt-1.5 font-serif text-body text-paper">{e.title}</p>
-            <p className="mt-2 border-l-2 border-signal/40 pl-3 font-serif text-caption text-paper-mid">
+            <p className="mt-2 border-l-2 border-signal-deep pl-3 font-serif text-caption text-paper-mid">
               {e.text}
             </p>
           </div>
@@ -180,7 +180,7 @@ export default function Checks({ onBack }: { onBack: () => void }) {
       <button
         type="button"
         onClick={onBack}
-        className="mt-9 w-full border border-rule py-3 font-serif text-body text-paper-mid hover:border-paper/30"
+        className="mt-9 w-full border border-rule-strong py-3 font-serif text-body text-paper hover:border-paper-low"
       >
         Back
       </button>

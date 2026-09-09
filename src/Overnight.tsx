@@ -176,7 +176,7 @@ export default function Overnight({
               key={h.symbol}
               className={`border px-1.5 py-0.5 text-micro ${
                 data.events.some((e) => e.symbols.includes(h.symbol))
-                  ? 'border-signal/50 text-signal'
+                  ? 'border-signal text-signal'
                   : 'border-rule text-paper-low'
               }`}
             >
@@ -196,14 +196,14 @@ export default function Overnight({
           <button
             type="button"
             onClick={onBrowse}
-            className="w-full border border-rule py-3 font-serif text-body text-paper-mid hover:border-paper/30"
+            className="w-full border border-rule-strong py-3 font-serif text-body text-paper hover:border-paper-low"
           >
             Browse all stories
           </button>
           <button
             type="button"
             onClick={onEdit}
-            className="w-full border border-rule py-3 font-serif text-body text-paper-mid hover:border-paper/30"
+            className="w-full border border-rule-strong py-3 font-serif text-body text-paper hover:border-paper-low"
           >
             Change holdings
           </button>

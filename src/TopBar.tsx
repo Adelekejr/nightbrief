@@ -13,11 +13,14 @@ export default function TopBar({
   onHome,
   onEditHoldings,
   editing,
+  atHome,
 }: {
   count: number
   onHome: () => void
   onEditHoldings: () => void
   editing: boolean
+  /** Already on the desk, so the wordmark has nowhere to take you. */
+  atHome: boolean
 }) {
   return (
     <div className="sticky top-0 z-20 border-b border-rule bg-ink">
@@ -25,8 +28,14 @@ export default function TopBar({
         <button
           type="button"
           onClick={onHome}
-          className="font-serif text-lede font-semibold tracking-tight text-paper hover:text-signal"
+          disabled={atHome}
+          aria-label={atHome ? 'Nightbrief' : 'Back to the overnight desk'}
+          className="group flex items-baseline gap-1.5 font-serif text-lede font-semibold tracking-tight text-paper disabled:cursor-default enabled:hover:text-signal"
         >
+          {/* A wordmark that is also a control has to admit it. The mark only
+              appears when there is somewhere to go, so tapping it on the desk
+              is never a dead action. */}
+          {!atHome && <span className="font-mono text-caption font-normal text-signal">‹</span>}
           Nightbrief
         </button>
 
@@ -36,8 +45,8 @@ export default function TopBar({
           aria-current={editing ? 'page' : undefined}
           className={`border px-2.5 py-1.5 ${
             editing
-              ? 'border-signal bg-signal/10'
-              : 'border-rule hover:border-paper/30'
+              ? 'border-signal bg-signal'
+              : 'border-rule-strong hover:border-paper-low'
           }`}
         >
           <Mono className={`text-micro font-medium ${editing ? 'text-signal-on' : 'text-paper-mid'}`}>
