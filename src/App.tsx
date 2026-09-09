@@ -5,6 +5,7 @@ import Overnight, { type OvernightResponse, type RankedEvent } from './Overnight
 import PortfolioGate from './PortfolioGate'
 import { loadHoldings, navigate, saveHoldings, useRoute } from './routes'
 import type { AnalysisResponse, Session } from './types'
+import { failureCopy, Working } from './states'
 import { Mono, SampleStamp } from './ui'
 
 type Async<T> =
@@ -43,27 +44,6 @@ function Masthead({ session, onHome }: { session: Session | null; onHome: () => 
         )}
       </p>
     </header>
-  )
-}
-
-function Working({ since, what }: { since: number; what: string }) {
-  const [elapsed, setElapsed] = useState(0)
-  useEffect(() => {
-    const t = setInterval(() => setElapsed(Math.round((Date.now() - since) / 1000)), 500)
-    return () => clearInterval(t)
-  }, [since])
-
-  return (
-    <div className="mt-10">
-      <p className="font-serif text-[18px] leading-relaxed text-paper/85">{what}</p>
-      <p className="mt-3 font-mono text-[11px] text-paper/45">{elapsed}s elapsed</p>
-      <div className="mt-4 h-px w-full bg-rule">
-        <div
-          className="h-px bg-signal transition-[width] duration-500"
-          style={{ width: `${Math.min(95, elapsed * 3)}%` }}
-        />
-      </div>
-    </div>
   )
 }
 
@@ -158,7 +138,13 @@ export default function App() {
       {brief.at === 'loading' && (
         <Working
           since={brief.since}
-          what="Reading the story, tracing how it reaches your holdings, and checking every claim against its source."
+          headline="Investigating this event against your holdings."
+          steps={[
+            'Fetching the full article from the publisher',
+            'Extracting what happened, and when, relative to the US session',
+            'Tracing the path from the event to each holding',
+            'Checking every claim and figure against the source',
+          ]}
         />
       )}
 
@@ -191,13 +177,11 @@ export default function App() {
 
       {brief.at === 'failed' && (
         <div className="mt-6">
-          <p className="font-serif text-[18px] leading-relaxed text-paper">
-            {brief.kind === 'rate-limited'
-              ? 'The free model tier is rate limited right now.'
-              : 'That Brief could not be produced.'}
+          <p className="font-serif text-[19px] leading-snug text-paper">
+            {failureCopy(brief.kind, brief.reason).title}
           </p>
-          <p className="mt-3 font-serif text-[15px] leading-relaxed text-inferred">
-            {brief.reason}
+          <p className="mt-3 font-serif text-[15px] leading-relaxed text-paper/70">
+            {failureCopy(brief.kind, brief.reason).body}
           </p>
           <p className="mt-2">
             <Mono className="text-[10px] text-paper/40">{brief.kind}</Mono>
@@ -259,7 +243,12 @@ export default function App() {
             {overnight.at === 'loading' && (
               <Working
                 since={overnight.since}
-                what="Checking everything that broke overnight against your holdings."
+                headline="Checking everything that broke overnight against your holdings."
+                steps={[
+                  'Fetching every live news source',
+                  'Matching your holdings by name',
+                  'Looking for indirect links the stories never state',
+                ]}
               />
             )}
             {overnight.at === 'ready' && (
@@ -280,11 +269,15 @@ export default function App() {
             )}
             {overnight.at === 'failed' && (
               <div className="mt-6">
-                <p className="font-serif text-[18px] leading-relaxed text-paper">
+                <p className="font-serif text-[19px] leading-snug text-paper">
                   The overnight desk could not be assembled.
                 </p>
-                <p className="mt-3 font-serif text-[15px] leading-relaxed text-inferred">
+                <p className="mt-3 font-serif text-[15px] leading-relaxed text-paper/70">
                   {overnight.reason}
+                </p>
+                <p className="mt-3 font-serif text-[14px] leading-relaxed text-inferred">
+                  Nothing is shown in place of it. An empty desk here would read
+                  as “nothing happened overnight”, which is not what was found.
                 </p>
                 <button
                   type="button"

@@ -1,5 +1,6 @@
 import { Marker, StageRail, StageSection } from './Chain'
 import type { AnalysisResponse } from './types'
+import { ago, ConfidenceLegend } from './states'
 import { ConfidenceMark, Mono, SampleStamp, SensitivityMark, SourceChip, TimeStamp } from './ui'
 
 /**
@@ -280,6 +281,13 @@ export default function BriefView({ data }: { data: AnalysisResponse }) {
           </ul>
         )}
 
+        <div className="mt-6">
+          <h3 className="mb-2 font-serif text-[13px] font-semibold tracking-wide text-paper/50">
+            What the confidence marks mean
+          </h3>
+          <ConfidenceLegend />
+        </div>
+
         {brief.falsifiers.length > 0 && (
           <div className="mt-6">
             <h3 className="mb-2 font-serif text-[13px] font-semibold tracking-wide text-paper/50">
@@ -332,7 +340,7 @@ export default function BriefView({ data }: { data: AnalysisResponse }) {
 
       <footer className="mt-11 border-t border-rule pt-4">
         <p className="font-mono text-[10px] leading-relaxed text-paper/40">
-          {data.model} · {(data.latencyMs / 1000).toFixed(1)}s
+          written {ago(data.generatedAt)} · {data.model} · {(data.latencyMs / 1000).toFixed(1)}s
           {data.captured ? ' · captured run, replayed' : ''}
           {data.fallbacksUsed.length > 0 &&
             ` · fell back from ${data.fallbacksUsed.map((f) => f.model).join(', ')}`}

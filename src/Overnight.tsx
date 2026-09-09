@@ -1,3 +1,4 @@
+import { ago } from './states'
 import { Heading, Mono, TimeStamp } from './ui'
 import type { Session } from './types'
 
@@ -108,8 +109,8 @@ export default function Overnight({
 
       <p className="mt-3 flex flex-wrap items-baseline gap-x-3 gap-y-1">
         <Mono className="text-[10px] text-paper/40">
-          {coverage.storiesConsidered} stories · {coverage.liveSources.length} live sources ·{' '}
-          {data.windowHours}h window
+          checked {ago(data.checkedAt)} · {coverage.storiesConsidered} stories ·{' '}
+          {coverage.liveSources.length} live sources · {data.windowHours}h window
         </Mono>
         {triage.state !== 'ok' && (
           <Mono className="text-[10px] text-falsify/80">
@@ -174,6 +175,11 @@ export default function Overnight({
         <p className="mt-2 font-serif text-[13px] text-paper/45">
           Highlighted holdings were reached by at least one event. The rest were
           checked and not reached.
+        </p>
+        <p className="mt-3 font-serif text-[13px] leading-relaxed text-paper/45">
+          An rToken tracks the price of a US-listed stock. Holding one is not
+          the same as owning the share, and the two can move apart — especially
+          overnight, when the underlying market is shut and liquidity is thin.
         </p>
 
         <div className="mt-5 flex flex-col gap-3">
