@@ -123,7 +123,7 @@ measure and was treated as a closed door, not something to work around.
 
 | Route | Purpose |
 | --- | --- |
-| `/api/overnight` | Events ranked against a portfolio, in two labelled layers. |
+| `/api/overnight` | Events ranked against a portfolio, in two labelled layers. `?report=1` returns pipeline metrics without a model call. |
 | `/api/feed` | Aggregated live news. `?probe=1` measures each source. |
 | `/api/universe` | The verified rToken listing and its provenance. |
 | `/api/analyze` | POST an item and holdings. `GET ?demo=1` runs the worked example live. |
@@ -283,12 +283,46 @@ prefixed `VITE_` — anything so prefixed is shipped to the browser by Vite.
 The key is sent to Google in a request header rather than a query string, so it
 cannot be captured in a URL or access log.
 
+## Validation report
+
+`#/validation` in the app, linked from the overnight desk and from every
+Brief. Five things measured against this deployment: source uptime, duplicate
+rate, freshness, feed and Brief latency, and match collision risk.
+
+Every figure carries one of three labels, and none is ever silently promoted
+from one to the next:
+
+| Label | Means |
+| --- | --- |
+| `observed` | Measured — live when the page loaded, or from one dated, named run whose source is linked. |
+| `estimated` | Reasoned from a real but partial or historical measurement, such as a probe run once during development. |
+| `targeted` | A goal, or an invariant enforced in code. Not a measurement of anything that has happened. |
+
+The live section calls `/api/overnight?report=1`, which stops before the model
+call — reading a report should not spend the deployment's free-tier quota.
+
+**What the report does not claim.** There is no false-positive rate against a
+human-judged sample of matched stories, because no labelled dataset exists.
+The page says so rather than filling the gap with a number. What it shows
+instead is a collision-risk proxy — direct matches made on a bare ticker of
+three characters or fewer, which is the case the standalone-token boundary
+exists to contain — and the fact that every direct match is a string the
+reader can verify by opening the source.
+
+## Ask the desk
+
+A prompt entry on the overnight desk with five fixed shortcuts. It is not a
+chat interface and nothing behind it parses free text: each shortcut routes to
+a screen this app already builds — the desk, a category filter over it, a
+Brief, or the worked example. Typing is disabled deliberately, so the phrasing
+never implies an understanding that is not there.
+
 ## Tests
 
 ```
 npm test           # 65 unit tests — the validator, matcher, universe, routing
 npm run typecheck
-npm run build && npm run test:browser   # 23 browser checks, phone and desktop
+npm run build && npm run test:browser   # 35 browser checks, phone and desktop
 ```
 
 The browser checks exist because every defect a reader has had to report on
@@ -315,6 +349,8 @@ Four defects were found and fixed the first time they ran:
 | `#/example` rendered a blank screen on refresh or a shared link | the route rebuilds the worked example; a Brief with nothing behind it returns to the desk |
 | the quietest ink read 3.4:1 on the stock — fine on a bright desktop, illegible on a phone at 1am | lightened to 4.7:1 |
 | the wordmark was a 24px-tall tap target on a phone, and `Clear all` 20px | both given real hit areas without changing the layout |
+| `#/checks` was linked from every Brief but never wired into the router — the link went to a blank screen | route added, and every route is now in the blank-screen check |
+| `#/checks` rendered a nineteen-character loading line in place of the whole page until its fetch returned | the framing renders immediately; only the counts wait |
 
 ## Stack
 

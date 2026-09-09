@@ -1,5 +1,5 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node'
-import { UNIVERSE, UNIVERSE_SOURCE } from '../lib/universe.js'
+import { categoryOf, UNIVERSE, UNIVERSE_SOURCE } from '../lib/universe.js'
 
 /**
  * The verified rToken listing, served rather than bundled, so the interface
@@ -16,6 +16,7 @@ export default function handler(_req: VercelRequest, res: VercelResponse) {
       name: t.name,
       underlying: t.underlying,
       sector: t.sector,
+      category: categoryOf(t.sector),
     })),
   })
 }

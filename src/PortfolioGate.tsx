@@ -1,7 +1,8 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
+import { CATEGORY_LABEL, CATEGORY_ORDER, type Category } from '../lib/universe'
 import { Chip, Mono, PrimaryButton, SecondaryButton } from './ui'
 
-type Token = { symbol: string; name: string; underlying: string; sector: string }
+type Token = { symbol: string; name: string; underlying: string; sector: string; category: Category }
 
 export const SAMPLE = ['rNVDA', 'rAMD', 'rINTC', 'rMU', 'rTSLA', 'rSPY']
 
@@ -43,6 +44,20 @@ export default function PortfolioGate({
   const toggle = (symbol: string) =>
     setPicked((p) => (p.includes(symbol) ? p.filter((s) => s !== symbol) : [...p, symbol]))
 
+  // Grouped once per fetch, in the fixed editorial order, rather than in
+  // whatever order the API happens to list eighteen bare symbols.
+  const grouped = useMemo(() => {
+    const byCategory = new Map<Category, Token[]>()
+    for (const t of tokens) {
+      const list = byCategory.get(t.category) ?? []
+      list.push(t)
+      byCategory.set(t.category, list)
+    }
+    return CATEGORY_ORDER.map((category) => ({ category, tokens: byCategory.get(category) ?? [] })).filter(
+      (g) => g.tokens.length > 0,
+    )
+  }, [tokens])
+
   return (
     <div>
       <p className="font-serif text-display text-paper">
@@ -78,15 +93,24 @@ export default function PortfolioGate({
         ) : tokens.length === 0 ? (
           <Mono className="text-micro text-paper-low">loading the verified listing…</Mono>
         ) : (
-          <div className="flex flex-wrap gap-1.5">
-            {tokens.map((t) => (
-              <Chip
-                key={t.symbol}
-                label={t.symbol}
-                title={t.name}
-                selected={picked.includes(t.symbol)}
-                onClick={() => toggle(t.symbol)}
-              />
+          <div className="flex flex-col gap-5">
+            {grouped.map((g) => (
+              <div key={g.category}>
+                <h3 className="mb-2 font-mono text-micro tracking-wide text-paper-low">
+                  {CATEGORY_LABEL[g.category]}
+                </h3>
+                <div className="flex flex-wrap gap-1.5">
+                  {g.tokens.map((t) => (
+                    <Chip
+                      key={t.symbol}
+                      label={t.symbol}
+                      name={t.name}
+                      selected={picked.includes(t.symbol)}
+                      onClick={() => toggle(t.symbol)}
+                    />
+                  ))}
+                </div>
+              </div>
             ))}
           </div>
         )}

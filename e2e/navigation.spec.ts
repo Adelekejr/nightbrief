@@ -107,7 +107,19 @@ test.describe('the first run', () => {
 
   test('no route renders a blank screen', async ({ page }) => {
     await stubApi(page)
-    for (const hash of ['#/', '#/holdings', '#/browse', '#/example', '#/brief', '#/nonsense']) {
+    // #/checks was linked from every Brief and every route before it for a
+    // stretch of this project's history without ever being wired into the
+    // router — a dead link nothing in this list had caught until it did.
+    for (const hash of [
+      '#/',
+      '#/holdings',
+      '#/browse',
+      '#/example',
+      '#/brief',
+      '#/checks',
+      '#/validation',
+      '#/nonsense',
+    ]) {
       await page.goto(hash)
       const text = ((await page.locator('main').innerText()) ?? '').trim()
       expect(text.length, `${hash} rendered nothing`).toBeGreaterThan(40)

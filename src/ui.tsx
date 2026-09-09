@@ -69,31 +69,49 @@ export function SecondaryButton({ children, onClick, disabled, className = '' }:
  * A selectable token. Selected inverts to a solid amber block — in print,
  * inversion is what a pressed key looks like, and it needs no shadow to read
  * as depressed.
+ *
+ * The company name sits next to the ticker rather than only in a hover
+ * title: a title is invisible to a thumb, and eighteen bare symbols are hard
+ * to scan for anyone who has not memorised what an rToken tracks.
  */
 export function Chip({
   label,
+  name,
   selected,
   onClick,
-  title,
 }: {
   label: string
+  name?: string
   selected: boolean
   onClick: () => void
-  title?: string
 }) {
   return (
     <button
       type="button"
       aria-pressed={selected}
       onClick={onClick}
-      title={title}
-      className={`border px-2.5 py-2 font-mono text-caption ${
+      className={`group flex items-baseline gap-1.5 border px-2.5 py-2 ${
         selected
-          ? 'border-signal bg-signal font-medium text-signal-on'
-          : 'border-rule text-paper-mid hover:border-rule-strong hover:text-paper'
+          ? 'border-signal bg-signal'
+          : 'border-rule hover:border-rule-strong'
       }`}
     >
-      {label}
+      <Mono
+        className={`text-caption ${
+          selected ? 'font-medium text-signal-on' : 'text-paper-mid group-hover:text-paper'
+        }`}
+      >
+        {label}
+      </Mono>
+      {name && (
+        <span
+          className={`font-serif text-caption ${
+            selected ? 'text-signal-on' : 'text-paper-low group-hover:text-paper-mid'
+          }`}
+        >
+          {name}
+        </span>
+      )}
     </button>
   )
 }
@@ -157,6 +175,31 @@ export function SensitivityMark({ direction }: { direction: Sensitivity }) {
       <Mono className="w-[0.9em] shrink-0 text-lede font-bold text-signal">{glyph}</Mono>
       <span className="font-serif text-caption text-paper-mid">{word}</span>
     </span>
+  )
+}
+
+type MetricBasis = 'observed' | 'estimated' | 'targeted'
+
+const METRIC_BASIS: Record<MetricBasis, string> = {
+  // Measured, just now or from one dated, named run. The strongest claim.
+  observed: 'text-paper-mid',
+  // Reasoned from a real but partial or historical measurement — a
+  // development-time probe, not something re-checked on every load.
+  estimated: 'text-inferred',
+  // A stated goal or an invariant enforced in code, not a measurement of
+  // anything that happened. Amber, because it is this project's annotation
+  // colour rather than a fact one.
+  targeted: 'text-signal',
+}
+
+/** Same register as BasisMark, extended for a metrics report: a reader
+ *  should be able to tell "we measured this" from "we are aiming for this"
+ *  as fast as they can tell fact from inference elsewhere in the app. */
+export function MetricBasisMark({ basis }: { basis: MetricBasis }) {
+  return (
+    <Mono className={`text-micro font-medium tracking-wide ${METRIC_BASIS[basis]}`}>
+      {basis}
+    </Mono>
   )
 }
 

@@ -15,6 +15,7 @@ export type Route =
   | { name: 'browse' }
   | { name: 'example' }
   | { name: 'checks' }
+  | { name: 'validation' }
 
 const ROUTES: Record<string, Route['name']> = {
   '': 'gate',
@@ -25,6 +26,7 @@ const ROUTES: Record<string, Route['name']> = {
   '/browse': 'browse',
   '/example': 'example',
   '/checks': 'checks',
+  '/validation': 'validation',
 }
 
 export function parseHash(hash: string): Route {

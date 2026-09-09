@@ -259,6 +259,46 @@ for (const t of UNIVERSE) {
   INDEX.set(t.name.toLowerCase(), t)
 }
 
+/**
+ * A coarser grouping than `sector`, for the picker and the natural-language
+ * shortcuts — not a Bitget category (see `bitgetCategory` above, which is
+ * sourced from the app's own tabs) but an editorial simplification so eleven
+ * sectors read as five scannable groups. Never presented as vendor data.
+ */
+export type Category = 'index-funds' | 'semiconductors' | 'large-tech' | 'energy' | 'thematic'
+
+const SECTOR_CATEGORY: Record<Sector, Category> = {
+  'index-etf': 'index-funds',
+  semiconductors: 'semiconductors',
+  'memory-and-storage': 'semiconductors',
+  'optical-networking': 'semiconductors',
+  'ai-cloud': 'thematic',
+  'software-and-cloud': 'large-tech',
+  'internet-platform': 'large-tech',
+  'consumer-hardware': 'large-tech',
+  'automotive-and-energy': 'energy',
+  'aerospace': 'thematic',
+  'power-equipment': 'energy',
+}
+
+export const CATEGORY_LABEL: Record<Category, string> = {
+  'index-funds': 'Index funds',
+  semiconductors: 'Semiconductors',
+  'large-tech': 'Large tech',
+  energy: 'Energy',
+  thematic: 'Thematic',
+}
+
+export const CATEGORY_ORDER: Category[] = [
+  'index-funds',
+  'semiconductors',
+  'large-tech',
+  'energy',
+  'thematic',
+]
+
+export const categoryOf = (sector: Sector): Category => SECTOR_CATEGORY[sector]
+
 export type Resolution =
   | { known: true; token: RToken; input: string }
   | { known: false; input: string }

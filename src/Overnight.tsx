@@ -1,7 +1,10 @@
+import { useState } from 'react'
 import Closes from './Closes'
+import PromptEntry from './PromptEntry'
 import { ago } from './states'
 import { Heading, Mono, TimeStamp } from './ui'
 import type { Session } from './types'
+import { CATEGORY_LABEL, type Category } from '../lib/universe'
 
 export type RankedEvent = {
   id: string
@@ -24,7 +27,7 @@ export type OvernightResponse = {
   marketNow: Session
   windowHours: number
   holdings: {
-    verified: Array<{ symbol: string; name: string }>
+    verified: Array<{ symbol: string; name: string; category: Category }>
     unverified: string[]
     touchedCount: number
   }
@@ -75,20 +78,75 @@ function WhyItMatters({ event }: { event: RankedEvent }) {
 
 export default function Overnight({
   data,
+  restoredHoldings,
+  onDismissRestored,
   onOpen,
   onBrowse,
   onEdit,
+  onExample,
 }: {
   data: OvernightResponse
+  /** Set only when this portfolio was found already saved on load — never
+   *  for one just picked. Null once dismissed, cleared, or replaced. */
+  restoredHoldings: string[] | null
+  onDismissRestored: () => void
   onOpen: (event: RankedEvent) => void
   onBrowse: () => void
   onEdit: () => void
+  onExample: () => void
 }) {
   const { holdings, events, coverage, triage } = data
   const total = holdings.verified.length
 
+  const [categoryFilter, setCategoryFilter] = useState<Category | null>(null)
+  const heldInFilter = categoryFilter
+    ? holdings.verified.filter((h) => h.category === categoryFilter)
+    : []
+  const heldSymbolsInFilter = new Set(heldInFilter.map((h) => h.symbol))
+  const visibleEvents = categoryFilter
+    ? events.filter((e) => e.symbols.some((s) => heldSymbolsInFilter.has(s)))
+    : events
+
+  const handlePrompt = (id: string) => {
+    switch (id) {
+      case 'overnight':
+        setCategoryFilter(null)
+        break
+      case 'semiconductors':
+        setCategoryFilter('semiconductors')
+        break
+      case 'large-tech':
+        setCategoryFilter('large-tech')
+        break
+      case 'top-story':
+        // The overall top story, never the filtered one — "biggest overnight"
+        // means biggest, not biggest-within-whatever-filter-happens-to-be-set.
+        if (events[0]) onOpen(events[0])
+        break
+      case 'example':
+        onExample()
+        break
+    }
+  }
+
   return (
     <div>
+      {restoredHoldings && restoredHoldings.length > 0 && (
+        <p className="mb-6 flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1 border-l-2 border-rule-strong pl-3">
+          <span className="font-serif text-caption text-paper-mid">
+            Restored portfolio: <Mono className="text-caption text-paper">{restoredHoldings.join(' · ')}</Mono>
+          </span>
+          <button
+            type="button"
+            onClick={onDismissRestored}
+            aria-label="Dismiss"
+            className="font-serif text-caption text-paper-low underline underline-offset-2 hover:text-signal"
+          >
+            Dismiss
+          </button>
+        </p>
+      )}
+
       {/* The answer to "is there anything I need to know", before anything else. */}
       <p className="font-serif text-page text-paper">
         {events.length === 0 ? (
@@ -133,9 +191,30 @@ export default function Overnight({
         )}
       </p>
 
-      {events.length > 0 && (
+      <div className="mt-6">
+        <PromptEntry onSelect={handlePrompt} />
+      </div>
+
+      {categoryFilter && (
+        <p className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1 border-l-2 border-signal pl-3">
+          <span className="font-serif text-caption text-paper-mid">
+            Showing {CATEGORY_LABEL[categoryFilter].toLowerCase()} only — {heldInFilter.length}{' '}
+            of your holdings, {visibleEvents.length} event{visibleEvents.length === 1 ? '' : 's'}.
+            {heldInFilter.length === 0 && " You don't hold anything in this category."}
+          </span>
+          <button
+            type="button"
+            onClick={() => setCategoryFilter(null)}
+            className="font-serif text-caption text-paper-low underline underline-offset-2 hover:text-signal"
+          >
+            Clear filter
+          </button>
+        </p>
+      )}
+
+      {visibleEvents.length > 0 && (
         <ol className="mt-8">
-          {events.map((e, i) => (
+          {visibleEvents.map((e, i) => (
             <li key={e.id}>
               <button
                 type="button"
@@ -212,6 +291,12 @@ export default function Overnight({
             Change holdings
           </button>
         </div>
+
+        <p className="mt-5">
+          <a href="#/validation" className="font-serif text-caption text-signal underline underline-offset-4">
+            How well does this actually work? The validation report →
+          </a>
+        </p>
       </section>
     </div>
   )

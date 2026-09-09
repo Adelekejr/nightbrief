@@ -290,12 +290,18 @@ export default function BriefView({ data }: { data: AnalysisResponse }) {
           </ul>
         )}
 
-        <p className="mt-3">
+        <p className="mt-3 flex flex-col gap-1.5">
           <a
             href="#/checks"
             className="font-serif text-caption text-signal underline underline-offset-4"
           >
             Watch the checks reject a deliberately bad Brief →
+          </a>
+          <a
+            href="#/validation"
+            className="font-serif text-caption text-signal underline underline-offset-4"
+          >
+            See the validation report →
           </a>
         </p>
 

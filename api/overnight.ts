@@ -2,7 +2,7 @@ import type { VercelRequest, VercelResponse } from '@vercel/node'
 import { SOURCES, tickerFeed } from '../lib/sources.js'
 import { fetchSource, type FeedItem } from '../lib/rss.js'
 import { sessionAt } from '../lib/market.js'
-import { resolve, UNIVERSE, type RToken } from '../lib/universe.js'
+import { categoryOf, resolve, UNIVERSE, type RToken } from '../lib/universe.js'
 import { directMatches, rank } from '../lib/match.js'
 import { attribute, dedupe } from '../lib/dedupe.js'
 import { generateJson, hasKey } from '../lib/gemini.js'
@@ -193,6 +193,67 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   const { kept, removed: duplicatesRemoved } = dedupe(inWindow)
   const recent = kept.slice(0, CANDIDATES)
 
+  // The validation report's pipeline metrics. Deliberately stops short of the
+  // model call: a page a judge opens to read numbers should not spend the
+  // deployment's free-tier quota to render them. Everything below is measured
+  // from this fetch, not carried over from a previous one.
+  if (req.query.report === '1') {
+    const reportedAt = Date.now()
+    const ages = recent
+      .filter((i) => i.publishedAt)
+      .map((i) => (reportedAt - new Date(i.publishedAt!).getTime()) / 60_000)
+      .sort((a, b) => a - b)
+    const mid = Math.floor(ages.length / 2)
+
+    // A risk proxy, not a measured false-positive rate — that needs a
+    // human-labelled sample, which does not exist. A match on a full company
+    // name is essentially unambiguous; a match on a bare ticker under four
+    // characters is the collision-prone case the standalone-token boundary
+    // exists to contain, so counting it separately shows the residual risk
+    // rather than hiding it inside one aggregate number.
+    const directHits = recent.flatMap((i) => directMatches(i, held))
+    const shortTickerHits = directHits.filter(
+      (d) => held.some((t) => t.symbol === d.symbol && d.term.length <= 3),
+    )
+
+    res.setHeader('cache-control', 'no-store')
+    res.status(200).json({
+      ok: true,
+      reportedAt: new Date(reportedAt).toISOString(),
+      windowHours: WINDOW_HOURS,
+      feedsMs,
+      sources: {
+        live: liveSources.map((s) => ({ id: s.result.sourceId, publisher: s.result.publisher })),
+        unavailable: general
+          .filter((s) => !s.result.ok || s.result.itemCount === 0)
+          .map((s) => ({ id: s.result.sourceId, publisher: s.result.publisher })),
+        tickerFeedsLive,
+        tickerFeedsRequested: perTicker.length,
+      },
+      duplicates: {
+        rawItems: inWindow.length,
+        kept: kept.length,
+        removed: duplicatesRemoved,
+        rate: inWindow.length > 0 ? duplicatesRemoved / inWindow.length : 0,
+      },
+      freshness:
+        ages.length > 0
+          ? {
+              sampledStories: ages.length,
+              medianAgeMinutes: Math.round(ages.length % 2 ? ages[mid] : (ages[mid - 1] + ages[mid]) / 2),
+              oldestAgeMinutes: Math.round(ages[ages.length - 1]),
+              newestAgeMinutes: Math.round(ages[0]),
+            }
+          : null,
+      matching: {
+        directHits: directHits.length,
+        shortTickerHits: shortTickerHits.length,
+        note: 'shortTickerHits is a collision-risk proxy (a bare ticker of 3 characters or fewer matched as a standalone token), not a confirmed false positive — each one is a real string in the source, checkable by opening it.',
+      },
+    })
+    return
+  }
+
   // Model triage. Degraded rather than broken: if this fails, the deterministic
   // layer still stands on its own and the response says triage was unavailable.
   let triage = new Map<string, Array<{ symbol: string; why: string }>>()
@@ -274,7 +335,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     windowHours: WINDOW_HOURS,
     timing: { feedsMs, triageMs },
     holdings: {
-      verified: held.map((t) => ({ symbol: t.symbol, name: t.name })),
+      verified: held.map((t) => ({ symbol: t.symbol, name: t.name, category: categoryOf(t.sector) })),
       unverified,
       touchedCount: touched.size,
     },

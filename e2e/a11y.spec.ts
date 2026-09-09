@@ -66,11 +66,15 @@ test('the whole gate can be driven from the keyboard', async ({ page }) => {
   await page.goto('#/')
   await page.waitForTimeout(400)
 
-  // Walk forward until the first token chip has focus, then select it.
+  // Walk forward until the first token chip has focus, then select it. The
+  // chip's text is the ticker and the company name together, so this matches
+  // on the ticker rather than on the whole label.
   let reached = false
   for (let i = 0; i < 40 && !reached; i++) {
     await page.keyboard.press('Tab')
-    reached = (await page.evaluate(() => document.activeElement?.textContent?.trim())) === 'rNVDA'
+    reached = Boolean(
+      (await page.evaluate(() => document.activeElement?.textContent?.trim()))?.startsWith('rNVDA'),
+    )
   }
   expect(reached, 'no keyboard path to the token list').toBe(true)
 

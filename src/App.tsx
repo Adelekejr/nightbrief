@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import BriefView from "./Brief";
 import Browse, { type BriefRequest } from "./Browse";
+import Checks from "./Checks";
+import Validation from "./Validation";
 import Overnight, {
   type OvernightResponse,
   type RankedEvent,
@@ -51,6 +53,11 @@ function Masthead({ session }: { session: Session | null }) {
 export default function App() {
   const route = useRoute();
   const [holdings, setHoldings] = useState<string[]>(() => loadHoldings());
+  // True only for the portfolio this app instance found already saved on
+  // load — never for one just picked or edited. A returning judge should
+  // know within a glance why the desk already has a portfolio behind it;
+  // someone who just built one does not need to be told they did that.
+  const [restored, setRestored] = useState(() => holdings.length > 0);
   const [overnight, setOvernight] = useState<Async<OvernightResponse>>({
     at: "idle",
   });
@@ -165,6 +172,7 @@ export default function App() {
     saveHoldings([])
     setHoldings([])
     setOvernight({ at: 'idle' })
+    setRestored(false)
     // Clearing from the editor used to leave the reader on a screen with a
     // disabled primary action and no way out but the masthead, which restored
     // the portfolio they had just cleared. Starting over means starting at the
@@ -176,6 +184,7 @@ export default function App() {
     saveHoldings(picked);
     setHoldings(picked);
     setOvernight({ at: "idle" }); // force a rebuild against the new portfolio
+    setRestored(false); // a portfolio just chosen was not found on disk
     navigate("overnight");
   };
 
@@ -318,6 +327,8 @@ export default function App() {
               {overnight.at === "ready" && (
                 <Overnight
                   data={overnight.data}
+                  restoredHoldings={restored ? holdings : null}
+                  onDismissRestored={() => setRestored(false)}
                   onOpen={(e: RankedEvent) =>
                     runBrief({
                       title: e.title,
@@ -329,6 +340,7 @@ export default function App() {
                   }
                   onBrowse={() => navigate("browse")}
                   onEdit={() => navigate("holdings")}
+                  onExample={openExample}
                 />
               )}
               {overnight.at === "failed" && (
@@ -367,6 +379,12 @@ export default function App() {
           )}
 
           {route.name === "browse" && <Browse onOpen={runBrief} />}
+          {route.name === "checks" && (
+            <Checks onBack={() => navigate(holdings.length ? "overnight" : "gate")} />
+          )}
+          {route.name === "validation" && (
+            <Validation onBack={() => navigate(holdings.length ? "overnight" : "gate")} />
+          )}
           {(route.name === "brief" || route.name === "example") && briefPane}
         </main>
       </div>
