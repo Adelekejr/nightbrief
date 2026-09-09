@@ -122,9 +122,13 @@ export default function Overnight({
           {coverage.duplicatesRemoved > 0 && ` · ${coverage.duplicatesRemoved} duplicates merged`}
         </Mono>
         {triage.state !== 'ok' && (
-          <Mono className="text-micro text-falsify/80">
-            indirect-link pass unavailable{triage.detail ? ` (${triage.detail})` : ''} — showing
-            named matches only
+          /* A narrower search, not an error. Red belongs to falsifiers alone,
+             and a reader who sees an error colour reasonably distrusts the
+             results underneath it — which would be the wrong lesson, because
+             everything shown here is a verifiable name match. */
+          <Mono className="text-micro text-paper-mid">
+            searched by name only — the pass that finds indirect links did not
+            answer this time
           </Mono>
         )}
       </p>

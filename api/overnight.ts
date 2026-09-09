@@ -7,11 +7,24 @@ import { directMatches, rank } from '../lib/match.js'
 import { attribute, dedupe } from '../lib/dedupe.js'
 import { generateJson, hasKey } from '../lib/gemini.js'
 
-const TRIAGE_MODEL = 'gemini-3.5-flash-lite'
+/**
+ * Triage gets a fallback chain for the same reason the Brief pipeline has one:
+ * a single free-tier call that is merely slow takes the whole indirect-link
+ * pass down with it, and the reader loses the layer that finds the connections
+ * the text never states.
+ *
+ * Both rungs were verified usable by real generateContent calls. Per-attempt
+ * timeouts are short enough that two attempts still fit inside the function's
+ * budget alongside the feed fetches.
+ */
+const TRIAGE_MODELS = ['gemini-3.5-flash-lite', 'gemini-3.1-flash-lite'] as const
+const TRIAGE_TIMEOUT_MS = 14_000
 const WINDOW_HOURS = 36
 const CANDIDATES = 40
 /** Per-holding feeds fan out to one host, so the count is capped. */
 const MAX_TICKER_FEEDS = 12
+
+type TriageLinks = { links: Array<{ itemId: string; symbol: string; why: string }> }
 
 const TRIAGE_SCHEMA = {
   type: 'OBJECT',
@@ -187,6 +200,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   let triageDetail: string | undefined
   let rawLinks = 0
   let unknownSymbols: string[] = []
+  let triageModel: string = TRIAGE_MODELS[0]
+  const triageAttempts: Array<{ model: string; kind: string; detail: string }> = []
   const triageAt = Date.now()
 
   if (hasKey() && recent.length > 0) {
@@ -197,14 +212,34 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       .map((i) => `[${i.id}] ${i.publisher}: ${i.title}`)
       .join('\n')
 
-    const out = await generateJson<{ links: Array<{ itemId: string; symbol: string; why: string }> }>({
-      model: TRIAGE_MODEL,
+    const prompt = `THE READER'S HOLDINGS\n\n${holdingsBlock}\n\nOVERNIGHT STORIES\n\n${storiesBlock}`
+
+    let out = await generateJson<TriageLinks>({
+      model: TRIAGE_MODELS[0],
       systemInstruction: TRIAGE_INSTRUCTION,
-      prompt: `THE READER'S HOLDINGS\n\n${holdingsBlock}\n\nOVERNIGHT STORIES\n\n${storiesBlock}`,
+      prompt,
       schema: TRIAGE_SCHEMA,
-      timeoutMs: 25_000,
+      timeoutMs: TRIAGE_TIMEOUT_MS,
       maxOutputTokens: 4096,
     })
+
+    for (const model of TRIAGE_MODELS.slice(1)) {
+      if (out.ok) break
+      // A rate limit applies to the next model too, so trying again only
+      // spends the reader's remaining quota to reach the same answer.
+      if (out.kind === 'rate-limited') break
+
+      triageAttempts.push({ model: triageModel, kind: out.kind, detail: out.detail })
+      triageModel = model
+      out = await generateJson<TriageLinks>({
+        model,
+        systemInstruction: TRIAGE_INSTRUCTION,
+        prompt,
+        schema: TRIAGE_SCHEMA,
+        timeoutMs: TRIAGE_TIMEOUT_MS,
+        maxOutputTokens: 4096,
+      })
+    }
 
     if (out.ok) {
       triageState = 'ok'
@@ -245,7 +280,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     },
     triage: {
       state: triageState,
-      model: triageState === 'ok' ? TRIAGE_MODEL : undefined,
+      model: triageState === 'ok' ? triageModel : undefined,
+      // What was tried before the one that answered, so a degraded pass is
+      // diagnosable rather than merely reported.
+      attempts: triageAttempts,
       detail: triageDetail,
       // How many links the model proposed, and how many survived. A large gap
       // is worth seeing rather than silently absorbing.
