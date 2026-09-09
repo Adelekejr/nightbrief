@@ -166,7 +166,7 @@ export async function fetchSource(
       headers: {
         // Several publishers reject unidentified clients outright.
         'user-agent':
-          'Nightdesk/0.1 (research prototype; https://github.com/Adelekejr/nightdesk)',
+          'Nightbrief/0.1 (research prototype; https://github.com/Adelekejr/nightdesk)',
         accept: 'application/rss+xml, application/atom+xml, application/xml, text/xml, */*',
       },
     })

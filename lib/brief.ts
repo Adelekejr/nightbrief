@@ -1,5 +1,5 @@
 /**
- * The shape of a Nightdesk brief, and the schema the model must fill.
+ * The shape of a Nightbrief brief, and the schema the model must fill.
  *
  * The vocabulary is deliberate. Exposure has a DIRECTION OF SENSITIVITY,
  * never a recommendation: "sensitive-negative" is a statement about how a

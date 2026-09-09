@@ -3,7 +3,7 @@ import { Mono } from './ui'
 /**
  * The one element on every screen.
  *
- * Nightdesk is portfolio-driven, so the portfolio has to be visible and
+ * Nightbrief is portfolio-driven, so the portfolio has to be visible and
  * editable from wherever the reader is — including halfway down a Brief. It
  * sticks to the top rather than sitting at the foot of a long scroll, which
  * is where the control used to be and where nobody found it.
@@ -27,7 +27,7 @@ export default function TopBar({
           onClick={onHome}
           className="font-serif text-[15px] font-semibold tracking-tight text-paper hover:text-signal"
         >
-          Nightdesk
+          Nightbrief
         </button>
 
         <button

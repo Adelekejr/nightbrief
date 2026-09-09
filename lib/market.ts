@@ -1,7 +1,7 @@
 /**
  * Where a moment in time falls relative to the US equity session.
  *
- * The whole premise of Nightdesk is that events land while the US market is
+ * The whole premise of Nightbrief is that events land while the US market is
  * shut, so "was it closed?" has to be computed, never assumed.
  */
 export type SessionPhase = 'regular' | 'pre-market' | 'after-hours' | 'overnight' | 'weekend'

@@ -8,7 +8,7 @@ export default function handler(_req: VercelRequest, res: VercelResponse) {
   res.setHeader('cache-control', 'no-store')
   res.status(200).json({
     ok: true,
-    service: 'nightdesk',
+    service: 'nightbrief',
     stage: 'scaffold',
     checkedAt: new Date().toISOString(),
     env: { geminiKey: Boolean(process.env.GEMINI_API_KEY) },

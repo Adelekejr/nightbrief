@@ -3,7 +3,7 @@ import type { Evidence } from './brief.js'
 /**
  * The canonical research task, captured end to end.
  *
- * A real article, pulled from Nightdesk's own live feed on 2026-09-08 and
+ * A real article, pulled from Nightbrief's own live feed on 2026-09-08 and
  * pinned here with its publisher, URL and publication time intact. It was
  * filed at 04:32 in New York — inside US pre-market, with the cash market
  * shut — which is exactly the situation the product exists for.

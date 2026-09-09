@@ -35,7 +35,7 @@ function Masthead({
     <header className="border-b border-rule pb-5">
       <button type="button" onClick={onHome} className="text-left">
         <h1 className="font-serif text-[28px] font-semibold tracking-tight text-paper">
-          Nightdesk
+          Nightbrief
         </h1>
       </button>
       <p className="mt-1 max-w-md font-serif text-[14px] leading-snug text-paper/55">

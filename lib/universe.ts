@@ -1,5 +1,5 @@
 /**
- * The tokenized-stock universe Nightdesk will reason about.
+ * The tokenized-stock universe Nightbrief will reason about.
  *
  * PROVENANCE — this matters more than the list itself.
  *
@@ -10,7 +10,7 @@
  *
  * Prices were visible in that capture and are deliberately NOT recorded here.
  * A price read off a screenshot is stale the moment it is taken, and a judge
- * cannot verify it. Nightdesk will not show a figure it cannot source live.
+ * cannot verify it. Nightbrief will not show a figure it cannot source live.
  *
  * This is a PARTIAL listing. Bitget publishes considerably more rTokens than
  * the eighteen confirmed here, so an unrecognised symbol means "not verified

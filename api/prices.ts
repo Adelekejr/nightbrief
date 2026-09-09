@@ -7,7 +7,7 @@ import { resolve } from '../lib/universe.js'
  *
  * Real, dated, and explicitly not a live quote or an rToken price. Tickers are
  * resolved against the verified listing first, so this cannot be used to fetch
- * a price for something Nightdesk has not confirmed exists.
+ * a price for something Nightbrief has not confirmed exists.
  */
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   const raw = typeof req.query.holdings === 'string' ? req.query.holdings : ''

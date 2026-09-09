@@ -53,6 +53,10 @@ export function useRoute(): Route {
   return route
 }
 
+/**
+ * Deliberately still the old name. Renaming the product should not silently
+ * empty a reader's saved portfolio, and this string is never shown to anyone.
+ */
 const KEY = 'nightdesk.holdings'
 
 export function loadHoldings(): string[] {

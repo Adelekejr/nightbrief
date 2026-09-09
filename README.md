@@ -1,8 +1,9 @@
-# Nightdesk
+# Nightbrief
 
 **An after-hours research desk for tokenized US stocks.**
 
 **Live: https://nightdesk-nine.vercel.app** — no account, no setup.
+_(URL changes with the project rename; this line is updated once the new host resolves.)_
 
 Three things worth opening, in order:
 
@@ -19,7 +20,7 @@ Macro news, policy decisions and geopolitical shocks land while US exchanges are
 shut — and rToken prices keep moving in response, on thinner liquidity, with
 far fewer people watching.
 
-Nightdesk answers one question:
+Nightbrief answers one question:
 
 > A macro or news event happened while US markets were closed. What does it mean
 > for the tokenized stocks I hold?
@@ -37,7 +38,7 @@ research coverage exists. That gap is the product.
 
 ## What it is not
 
-Nightdesk is a **research tool**. It places no orders, holds no exchange
+Nightbrief is a **research tool**. It places no orders, holds no exchange
 credentials, touches no funds, and has no execution path of any kind. It does
 not tell anyone what to buy or sell. The human reads the reasoning and decides.
 
@@ -65,7 +66,7 @@ the page shows the validator's own reasons for each.
 
 ## How it works
 
-**Name your holdings.** Nightdesk ranks everything that broke while New York
+**Name your holdings.** Nightbrief ranks everything that broke while New York
 was shut against them, and reports how many were touched.
 
 **Open a Brief.** One event, investigated: what happened, what the source
@@ -239,7 +240,7 @@ Stated plainly, because a tool that hides its edges is harder to trust than one
 that names them.
 
 **Exchange holidays are not modelled.** Session labels are computed from the
-clock and the weekday. On Thanksgiving, Nightdesk will call it a regular session
+clock and the weekday. On Thanksgiving, Nightbrief will call it a regular session
 and be wrong. The type that carries this says so in its name.
 
 **The reasoning is generated, and generated reasoning can be wrong.** The
@@ -255,7 +256,7 @@ everywhere they appear, and they are the part of a Brief most worth arguing
 with.
 
 **Coverage is uneven.** Eight news sources is not the whole market. A story
-carried only by a publisher Nightdesk does not read will not appear, and the
+carried only by a publisher Nightbrief does not read will not appear, and the
 desk will say nothing rather than know it missed something.
 
 **Prices are a day old by construction.** End-of-day closes for the underlying

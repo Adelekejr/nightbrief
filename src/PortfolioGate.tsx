@@ -6,7 +6,7 @@ type Token = { symbol: string; name: string; underlying: string; sector: string 
 export const SAMPLE = ['rNVDA', 'rAMD', 'rINTC', 'rMU', 'rTSLA', 'rSPY']
 
 /**
- * The first screen. Nightdesk cannot rank anything against a portfolio it does
+ * The first screen. Nightbrief cannot rank anything against a portfolio it does
  * not have, so this is a gate rather than a settings page — but a reader in a
  * hurry is one tap from a populated desk.
  */
@@ -40,8 +40,8 @@ export default function PortfolioGate({
     <div>
       <p className="font-serif text-[19px] leading-relaxed text-paper">
         {editing
-          ? 'Change what Nightdesk watches on your behalf. The overnight desk is rebuilt against whatever you leave selected.'
-          : 'Tell Nightdesk what you hold. It will work out which of the events that broke while New York was shut actually reach your positions.'}
+          ? 'Change what Nightbrief watches on your behalf. The overnight desk is rebuilt against whatever you leave selected.'
+          : 'Tell Nightbrief what you hold. It will work out which of the events that broke while New York was shut actually reach your positions.'}
       </p>
 
       <section className="mt-8">

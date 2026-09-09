@@ -13,7 +13,7 @@ export type BriefRequest = {
 /**
  * The secondary surface. The ranked overnight desk answers "does any of this
  * reach me"; this is for when the reader already knows what they want to look
- * at, or wants to hand Nightdesk something it did not fetch.
+ * at, or wants to hand Nightbrief something it did not fetch.
  */
 export default function Browse({ onOpen }: { onOpen: (req: BriefRequest) => void }) {
   const [mode, setMode] = useState<'feed' | 'paste'>('feed')
@@ -64,7 +64,7 @@ export default function Browse({ onOpen }: { onOpen: (req: BriefRequest) => void
             className="w-full rounded-[2px] border border-rule bg-ink-raised p-3 font-serif text-[15px] leading-relaxed text-paper placeholder:text-paper/30 focus:border-signal/60 focus:outline-none"
           />
           <p className="mt-2 font-serif text-[13px] leading-relaxed text-paper/45">
-            Anything pasted here is treated as unverified — Nightdesk has not
+            Anything pasted here is treated as unverified — Nightbrief has not
             checked where it came from, and the Brief will say so.
           </p>
           <button

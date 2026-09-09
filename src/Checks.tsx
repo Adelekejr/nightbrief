@@ -61,7 +61,7 @@ export default function Checks({ onBack }: { onBack: () => void }) {
       </p>
 
       <h1 className="font-serif text-[23px] leading-[1.32] text-paper">
-        Nightdesk claims it will not present a fabricated claim as fact. Here is that
+        Nightbrief claims it will not present a fabricated claim as fact. Here is that
         claim being tested.
       </h1>
 

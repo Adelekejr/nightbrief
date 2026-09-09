@@ -89,7 +89,7 @@ export function failureCopy(kind: string, reason: string): Copy {
     case 'rate-limited':
       return {
         title: 'The free model tier is rate limited right now.',
-        body: 'Nightdesk runs on Gemini’s free tier, which allows a limited number of requests per day. The worked example below is a real run captured earlier, and shows the same flow end to end.',
+        body: 'Nightbrief runs on Gemini’s free tier, which allows a limited number of requests per day. The worked example below is a real run captured earlier, and shows the same flow end to end.',
         retry: false,
       }
     case 'model-unavailable':
@@ -107,7 +107,7 @@ export function failureCopy(kind: string, reason: string): Copy {
     case 'no-verified-holdings':
       return {
         title: 'None of those symbols are in the verified listing.',
-        body: 'Nightdesk only reasons about rTokens it has confirmed exist. Rather than guess at an unrecognised symbol, it declines the request.',
+        body: 'Nightbrief only reasons about rTokens it has confirmed exist. Rather than guess at an unrecognised symbol, it declines the request.',
         retry: false,
       }
     case 'network':

@@ -207,7 +207,7 @@ export default function BriefView({ data }: { data: AnalysisResponse }) {
       <StageSection
         stage="exposure"
         title="What that means for each holding"
-        lede="Direction of sensitivity. Nightdesk does not tell you what to do about it."
+        lede="Direction of sensitivity. Nightbrief does not tell you what to do about it."
       >
         {brief.exposures.length === 0 ? (
           <p className="font-serif text-[15px] leading-relaxed text-inferred">
@@ -364,7 +364,7 @@ export default function BriefView({ data }: { data: AnalysisResponse }) {
             ` · fell back from ${data.fallbacksUsed.map((f) => f.model).join(', ')}`}
         </p>
         <p className="mt-3 font-serif text-[13px] leading-relaxed text-paper/45">
-          Analysis, not advice. Nightdesk places no orders, holds no exchange
+          Analysis, not advice. Nightbrief places no orders, holds no exchange
           credentials, and does not tell you what to buy or sell. rTokens track
           the price of a US-listed stock; holding one is not the same as owning
           the share, and the two can move apart.

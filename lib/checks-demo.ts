@@ -36,7 +36,7 @@ export const CHECKS_FAULTS = [
   {
     label: 'An exposure to a symbol outside the verified listing',
     detail:
-      'rGOOGL is not in the eighteen pairs confirmed from Bitget. Nightdesk will not reason about a token it has not verified exists.',
+      'rGOOGL is not in the eighteen pairs confirmed from Bitget. Nightbrief will not reason about a token it has not verified exists.',
   },
   {
     label: 'A quote that is not in the article',

@@ -87,7 +87,7 @@ export async function extractArticle(url: string, timeoutMs = 8000): Promise<Ext
       redirect: 'follow',
       headers: {
         'user-agent':
-          'Nightdesk/0.1 (research prototype; https://github.com/Adelekejr/nightdesk)',
+          'Nightbrief/0.1 (research prototype; https://github.com/Adelekejr/nightdesk)',
         accept: 'text/html,application/xhtml+xml',
       },
     })
