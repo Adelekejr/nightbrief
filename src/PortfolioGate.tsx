@@ -63,7 +63,7 @@ export default function PortfolioGate({
                 setPicked([])
                 onClear?.()
               }}
-              className="font-serif text-caption text-paper-mid underline underline-offset-2 hover:text-signal"
+              className="-my-1.5 py-1.5 font-serif text-caption text-paper-mid underline underline-offset-2 hover:text-signal"
             >
               Clear all
             </button>

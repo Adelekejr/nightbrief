@@ -26,7 +26,7 @@ function Masthead({ session }: { session: Session | null }) {
   }, []);
 
   return (
-    <header className="border-b border-rule pb-5">
+    <div className="border-b border-rule pb-5">
       <p className="mt-1 max-w-md font-serif text-caption text-paper-mid">
         Investigates what broke while the US market was shut, and works out
         which of your tokenized holdings it reaches.
@@ -44,7 +44,7 @@ function Masthead({ session }: { session: Session | null }) {
           </>
         )}
       </p>
-    </header>
+    </div>
   );
 }
 
@@ -126,8 +126,7 @@ export default function App() {
     [holdings],
   );
 
-  const openExample = useCallback(() => {
-    navigate("example");
+  const loadExample = useCallback(() => {
     setBrief({ at: "loading", since: Date.now() });
     fetch("/demo-brief.json")
       .then((r) => r.json())
@@ -141,6 +140,22 @@ export default function App() {
       );
   }, []);
 
+  const openExample = useCallback(() => {
+    setBrief({ at: "idle" });
+    navigate("example");
+  }, []);
+
+  // A Brief exists only as the result of a run, so arriving at one directly —
+  // a refresh, a shared link, a stale hash — has nothing to render. The
+  // worked example is the one that can always be rebuilt from nothing; every
+  // other Brief sends the reader back to where one can be started, rather
+  // than to the blank screen this used to be.
+  useEffect(() => {
+    if (route.name === "example" && brief.at === "idle") loadExample();
+    if (route.name === "brief" && brief.at === "idle")
+      navigate(holdings.length ? "overnight" : "gate");
+  }, [route.name, brief.at, holdings.length, loadExample]);
+
   /**
    * Clearing is immediate and total: the saved portfolio goes, and the desk
    * built from it goes with it. Keeping a desk for holdings the reader has
@@ -150,6 +165,11 @@ export default function App() {
     saveHoldings([])
     setHoldings([])
     setOvernight({ at: 'idle' })
+    // Clearing from the editor used to leave the reader on a screen with a
+    // disabled primary action and no way out but the masthead, which restored
+    // the portfolio they had just cleared. Starting over means starting at the
+    // start.
+    navigate('gate')
   }
 
   const commitHoldings = (picked: string[]) => {
@@ -341,6 +361,7 @@ export default function App() {
               initial={holdings}
               editing
               onReady={commitHoldings}
+              onClear={clearHoldings}
               onCancel={() => navigate(holdings.length ? "overnight" : "gate")}
             />
           )}

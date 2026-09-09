@@ -37,8 +37,10 @@ export function StageRail({ current }: { current: Stage }) {
             >
               {s}
             </Mono>
+            {/* Separator, not a rule: rule tones are for hairlines and a glyph
+                drawn in one is a glyph nobody can see. */}
             {i < STAGES.length - 1 && (
-              <span aria-hidden className="font-mono text-micro text-rule-strong">
+              <span aria-hidden className="font-mono text-micro text-paper-low">
                 ›
               </span>
             )}

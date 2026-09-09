@@ -24,7 +24,10 @@
   /* ---- ink ------------------------------------------------------------ */
   --color-paper: #ede6d8;
   --color-paper-mid: #a79d8d;
-  --color-paper-low: #736a5c;
+  /* The quietest ink still has to clear 4.5:1 on the stock. At #736a5c it
+     read 3.4:1 — fine on a bright desktop, illegible on a phone at 1am,
+     which is the only time anyone opens this. */
+  --color-paper-low: #8a7f6f;
 
   /* ---- rules ---------------------------------------------------------- */
   --color-rule: #2e2820;

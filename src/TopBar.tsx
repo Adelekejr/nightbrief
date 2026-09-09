@@ -26,13 +26,16 @@ export default function TopBar({
   atHome: boolean
 }) {
   return (
-    <div className="sticky top-0 z-20 border-b border-rule bg-ink">
-      <div className="mx-auto flex w-full max-w-[38rem] items-center justify-between gap-3 px-5 py-2.5">
+    <header className="sticky top-0 z-20 border-b border-rule bg-ink">
+      <div className="mx-auto flex w-full max-w-[38rem] items-center justify-between gap-3 px-5 py-2">
         <button
           type="button"
           onClick={onHome}
           aria-label={atHome ? 'Back to the top' : 'Back to the overnight desk'}
-          className="flex items-baseline gap-1.5 font-serif text-lede font-semibold tracking-tight text-paper hover:text-signal"
+          /* The negative margin keeps the bar its own height while the hit
+             area grows to a thumb. This is the control a reader reaches for
+             first on a phone; 24px of it was not enough to hit. */
+          className="-my-2 flex items-baseline gap-1.5 py-2 font-serif text-lede font-semibold tracking-tight text-paper hover:text-signal"
         >
           {/* The mark appears when the wordmark leaves the current screen. On
               the desk it stays put and the wordmark returns you to the top. */}
@@ -44,7 +47,7 @@ export default function TopBar({
           type="button"
           onClick={onEditHoldings}
           aria-current={editing ? 'page' : undefined}
-          className={`border px-2.5 py-1.5 ${
+          className={`border px-2.5 py-2 ${
             editing
               ? 'border-signal bg-signal'
               : 'border-rule-strong hover:border-paper-low'
@@ -55,6 +58,6 @@ export default function TopBar({
           </Mono>
         </button>
       </div>
-    </div>
+    </header>
   )
 }

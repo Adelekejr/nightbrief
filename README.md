@@ -283,6 +283,39 @@ prefixed `VITE_` — anything so prefixed is shipped to the browser by Vite.
 The key is sent to Google in a request header rather than a query string, so it
 cannot be captured in a URL or access log.
 
+## Tests
+
+```
+npm test           # 65 unit tests — the validator, matcher, universe, routing
+npm run typecheck
+npm run build && npm run test:browser   # 23 browser checks, phone and desktop
+```
+
+The browser checks exist because every defect a reader has had to report on
+this project was invisible to the type checker and to the unit tests: a
+control that rendered but did nothing, a colour pair that only fails to the
+eye, state that only diverged after navigation. They run against a real
+Chromium on a Pixel 7 viewport and a desktop one, with the API stubbed, so a
+failure means the interface is wrong rather than that a publisher was slow.
+
+They cover navigation (the masthead reaches the desk from anywhere and is
+never dead; clearing the portfolio leaves nothing behind, including on disk;
+no route renders a blank screen), contrast (every visible run of text is
+measured against its composited background and held to WCAG AA, plus a check
+that nothing uses a shadow, gradient or blur to carry meaning), and access
+(every control is named, the whole gate is keyboard-drivable, the focus ring
+is drawn, nothing moves when motion is declined, targets clear WCAG 2.2's
+24px and navigation clears 40px, and no screen scrolls sideways on a phone).
+
+Four defects were found and fixed the first time they ran:
+
+| Found | Fix |
+| --- | --- |
+| `Clear all` in the holdings editor cleared the ticks but not the saved portfolio, and left no way off the screen but the masthead — which restored it | the editor clears saved state and returns to the gate |
+| `#/example` rendered a blank screen on refresh or a shared link | the route rebuilds the worked example; a Brief with nothing behind it returns to the desk |
+| the quietest ink read 3.4:1 on the stock — fine on a bright desktop, illegible on a phone at 1am | lightened to 4.7:1 |
+| the wordmark was a 24px-tall tap target on a phone, and `Clear all` 20px | both given real hit areas without changing the layout |
+
 ## Stack
 
-Vite · React · TypeScript · Tailwind · Vercel serverless functions.
+Vite · React · TypeScript · Tailwind · Vercel serverless functions · Playwright.
