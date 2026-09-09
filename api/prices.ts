@@ -1,5 +1,5 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node'
-import { fetchClose } from '../lib/prices.js'
+import { fetchClose, fetchFrom, PROVIDERS } from '../lib/prices.js'
 import { resolve } from '../lib/universe.js'
 
 /**
@@ -22,6 +22,23 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (underlying.size === 0) {
     res.setHeader('cache-control', 'no-store')
     res.status(400).json({ ok: false, reason: 'No verified holdings named.' })
+    return
+  }
+
+  // ?probe=1 reports how each provider behaved for one ticker, so a dead
+  // price source is diagnosed from measurement rather than guessed at.
+  if (req.query.probe === '1') {
+    const ticker = [...underlying.keys()][0]
+    const tried = await Promise.all(
+      PROVIDERS.map(async (provider) => {
+        const out = await fetchFrom(provider, ticker, 8000)
+        return out.ok
+          ? { provider: provider.id, ok: true, close: out.close }
+          : { provider: provider.id, ok: false, reason: out.reason, sample: out.sample }
+      }),
+    )
+    res.setHeader('cache-control', 'no-store')
+    res.status(200).json({ probedAt: new Date().toISOString(), ticker, tried })
     return
   }
 

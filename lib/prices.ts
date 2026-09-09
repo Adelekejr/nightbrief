@@ -24,8 +24,61 @@ export type PriceLookup =
   | { ok: true; close: Close }
   | { ok: false; ticker: string; reason: string; sample?: string }
 
-const CSV = (ticker: string) =>
-  `https://stooq.com/q/d/l/?s=${encodeURIComponent(ticker.toLowerCase())}.us&i=d`
+const UA = 'Nightdesk/0.1 (research prototype; https://github.com/Adelekejr/nightdesk)'
+
+/**
+ * Candidate providers, tried in order. Which of these will serve a request
+ * from a datacentre IP is a question about the live network, so it is measured
+ * rather than assumed — the same way the news feeds were.
+ */
+export type Provider = { id: string; label: string; url: (ticker: string) => string }
+
+export const PROVIDERS: Provider[] = [
+  {
+    id: 'yahoo-chart',
+    label: 'Yahoo Finance',
+    url: (t) =>
+      `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(t)}?interval=1d&range=10d`,
+  },
+  {
+    id: 'stooq',
+    label: 'Stooq',
+    url: (t) => `https://stooq.com/q/d/l/?s=${encodeURIComponent(t.toLowerCase())}.us&i=d`,
+  },
+]
+
+/** Yahoo's chart response, reduced to the two fields that matter. */
+export function lastCloseFromYahoo(body: string, ticker: string): PriceLookup {
+  let parsed: any
+  try {
+    parsed = JSON.parse(body)
+  } catch {
+    return { ok: false, ticker, reason: 'not JSON', sample: body.slice(0, 200) }
+  }
+
+  const result = parsed?.chart?.result?.[0]
+  const stamps: unknown[] = result?.timestamp ?? []
+  const closes: unknown[] = result?.indicators?.quote?.[0]?.close ?? []
+
+  // Walk back from the most recent bar: the latest can be null while a
+  // session is still forming, and a null must never become a zero.
+  for (let i = closes.length - 1; i >= 0; i--) {
+    const close = Number(closes[i])
+    const stamp = Number(stamps[i])
+    if (!Number.isFinite(close) || close <= 0 || !Number.isFinite(stamp)) continue
+
+    return {
+      ok: true,
+      close: {
+        ticker: ticker.toUpperCase(),
+        close: Math.round(close * 100) / 100,
+        date: new Date(stamp * 1000).toISOString().slice(0, 10),
+      },
+    }
+  }
+
+  return { ok: false, ticker, reason: 'no usable close in the response' }
+}
 
 /**
  * Stooq returns `Date,Open,High,Low,Close,Volume` with the most recent row
@@ -60,24 +113,44 @@ export function lastCloseFromCsv(csv: string, ticker: string): PriceLookup {
   return { ok: true, close: { ticker: ticker.toUpperCase(), close, date } }
 }
 
-export async function fetchClose(ticker: string, timeoutMs = 6000): Promise<PriceLookup> {
+export async function fetchFrom(
+  provider: Provider,
+  ticker: string,
+  timeoutMs = 6000,
+): Promise<PriceLookup> {
   const controller = new AbortController()
   const timer = setTimeout(() => controller.abort(), timeoutMs)
 
   try {
-    const res = await fetch(CSV(ticker), {
+    const res = await fetch(provider.url(ticker), {
       signal: controller.signal,
-      headers: {
-        'user-agent':
-          'Nightdesk/0.1 (research prototype; https://github.com/Adelekejr/nightdesk)',
-      },
+      headers: { 'user-agent': UA, accept: '*/*' },
     })
-    if (!res.ok) return { ok: false, ticker, reason: `source returned ${res.status}` }
-    return lastCloseFromCsv(await res.text(), ticker)
+    if (!res.ok) return { ok: false, ticker, reason: `${provider.id} returned ${res.status}` }
+
+    const body = await res.text()
+    return provider.id === 'yahoo-chart'
+      ? lastCloseFromYahoo(body, ticker)
+      : lastCloseFromCsv(body, ticker)
   } catch (err) {
     const aborted = err instanceof Error && err.name === 'AbortError'
-    return { ok: false, ticker, reason: aborted ? 'source timed out' : 'source unreachable' }
+    return {
+      ok: false,
+      ticker,
+      reason: aborted ? `${provider.id} timed out` : `${provider.id} unreachable`,
+    }
   } finally {
     clearTimeout(timer)
   }
+}
+
+/** First provider that answers with a usable close wins. */
+export async function fetchClose(ticker: string, timeoutMs = 6000): Promise<PriceLookup> {
+  let last: PriceLookup = { ok: false, ticker, reason: 'no provider tried' }
+
+  for (const provider of PROVIDERS) {
+    last = await fetchFrom(provider, ticker, timeoutMs)
+    if (last.ok) return last
+  }
+  return last
 }
