@@ -2,6 +2,18 @@
 
 **An after-hours research desk for tokenized US stocks.**
 
+**Live: https://nightdesk-nine.vercel.app** — no account, no setup.
+
+Three things worth opening, in order:
+
+1. **The worked example** — one complete research task, from a real story that
+   broke while New York was shut through to the holdings it reaches. Captured
+   from a real run and replayed, so it is instant and cannot fail.
+2. **`#/checks`** — a deliberately corrupted model output run through the real
+   validator, so the anti-fabrication claim can be watched rather than believed.
+3. **The desk itself** — name some holdings and see what the last thirty-six
+   hours actually did to them.
+
 Tokenized US equities (rTokens) trade 24/7. The market underneath them does not.
 Macro news, policy decisions and geopolitical shocks land while US exchanges are
 shut — and rToken prices keep moving in response, on thinner liquidity, with
@@ -82,11 +94,12 @@ interface says the indirect pass was unavailable.
 | Public URL | live, no login |
 | Overnight ranking | live, two layers |
 | Brief pipeline | live |
-| Provenance validator | live, 36 tests |
+| Provenance validator | live, and demonstrable at `#/checks` |
 | Article body retrieval | live |
-| News feed | live, 6 of 11 sources answering |
+| News feed | live, 8 of 9 sources answering, plus per-holding feeds |
 | rToken universe | 18 pairs, observed and dated |
 | Worked example | captured, served instantly |
+| Tests | 65, no test framework — Node's runner and type stripping |
 | Prices | live — closing price of the underlying share, dated |
 
 **What is real on screen.** Headlines, publishers, timestamps, links and
@@ -141,10 +154,17 @@ memory would have suggested turned out to be wrong.
 The two retirements are the reason for the rule. Both were plausible names, both
 appear in older documentation, and both return 404 for a key created today.
 
-**Pinned:** `gemini-3.5-flash`, falling back to `gemini-3.5-flash-lite`.
-Explicit versions rather than the `-latest` alias, so a brief captured for
-review can be reproduced against the same model. Reproduce the check any time
-at `/api/models?generate=1`.
+**Pinned, in order:** `gemini-3.5-flash` → `gemini-3-flash-preview` →
+`gemini-3.5-flash-lite`. Explicit versions rather than the `-latest` alias, so
+a Brief captured for review can be reproduced against the same model. Reproduce
+the check any time at `/api/models?generate=1`.
+
+The middle rung exists because the preferred model returned "experiencing high
+demand" three times in one afternoon. Falling straight to the lite model is a
+large quality drop — on the same article it found two chain links to the
+stronger model's four, and missed the two most obvious exposures entirely — so
+a preview build, reached only after the first choice has already failed, is
+better than nothing. If it disappears, the chain continues past it.
 
 **On the same worked example** (observed, single runs, not averages):
 
@@ -164,24 +184,96 @@ a reader never waits for it.
 
 ## Data sources
 
-**News — live.** Eleven keyless RSS/Atom feeds are attempted on every request.
-Six answered when last measured (2026-09-08): Federal Reserve, CNBC, CNBC
-Markets, MarketWatch, Yahoo Finance and the European Central Bank. Five did
-not: the Bureau of Labor Statistics (403), the Bureau of Economic Analysis
-(404), the US Treasury (timeout), Nasdaq (timeout) and the SEC (403).
+**Market news — live, and measured.** Nine keyless RSS/Atom feeds are attempted
+on every request. Eight answered when last measured (2026-09-09): the Federal
+Reserve, the Bureau of Economic Analysis, CNBC, CNBC Markets, MarketWatch,
+Yahoo Finance, the European Central Bank and the SEC.
 
-Rather than hide that, `/api/feed` names the sources that answered and the
-sources that did not, in the response itself. `/api/feed?probe=1` reports
-status, latency and item count per source, measured from the deployed function.
+One did not: the Bureau of Labor Statistics refuses this client on all four of
+its feed paths. It is kept in the list anyway, because it fails in under a
+tenth of a second and a reader looking for CPI or payrolls should see that the
+source was sought and refused rather than find it quietly absent.
 
-**Tokenized universe — observed, dated, partial.** Eighteen Bitget rToken
-pairs, read off the Bitget app's "Spot stocks" tab on 2026-09-08. Prices were
-visible in that capture and are deliberately not recorded: a price from a
-screenshot is stale immediately and cannot be verified by a reader. The list
-is explicitly incomplete, so an unrecognised symbol is reported as "not
-verified by us" rather than treated as non-existent.
+The US Treasury and Nasdaq were removed after every candidate URL timed out.
+Sources are fetched together, so two that never answer were setting a
+six-second floor under every request.
 
-**Prices — not yet wired.** Nothing in the interface currently shows a price.
+`/api/feed` names the sources that answered and the sources that did not, in
+the response itself. `/api/feed?probe=1` reports status, latency and item count
+per source, measured from the deployed function rather than asserted here.
+
+**Per-holding news — live.** Each holding also gets the news filed against its
+own ticker. General market feeds cover the largest names and barely touch the
+rest: a Lumentum or Nebius story rarely reaches CNBC's top stories, so a holder
+of those positions could see an empty desk on a night when there was real news
+about what they hold.
+
+These feeds syndicate other publishers, so attribution follows the journalism —
+`fool.com via Yahoo Finance`, not "Yahoo Finance". Stories arriving from both
+directions are deduplicated by canonical URL and headline; a single request
+typically merges a dozen duplicates that would otherwise have been ranked twice.
+
+**Prices — live, dated, and narrowly defined.** The last closing price of the
+*underlying US-listed share*, from Yahoo Finance, shown with its trading date
+and the provider that answered.
+
+They are **not** live quotes, and **not** rToken prices. An rToken trades around
+the clock and can move apart from the share it tracks, most of all while the US
+market is shut — which is exactly when this tool is used. The interface states
+both caveats next to the numbers rather than in a footnote.
+
+Stooq was tried first and refused: it answers a datacentre IP with a JavaScript
+browser-verification page. That is an explicit anti-automation measure, and it
+was treated as a closed door rather than something to work around.
+
+**Tokenized universe — observed, dated, partial.** Eighteen Bitget rToken pairs,
+read off the Bitget app's "Spot stocks" tab on 2026-09-08. Prices were visible
+in that capture and are deliberately not recorded: a price from a screenshot is
+stale immediately and cannot be verified by a reader. The list is explicitly
+incomplete, so an unrecognised symbol is reported as "not verified by us" rather
+than treated as non-existent.
+
+## Limitations
+
+Stated plainly, because a tool that hides its edges is harder to trust than one
+that names them.
+
+**Exchange holidays are not modelled.** Session labels are computed from the
+clock and the weekday. On Thanksgiving, Nightdesk will call it a regular session
+and be wrong. The type that carries this says so in its name.
+
+**The reasoning is generated, and generated reasoning can be wrong.** The
+validator guarantees that claims are *traceable* — that a cited source was
+supplied, that a quote is verbatim, that a figure appears in an article. It
+cannot guarantee they are *correct*. A well-sourced chain can still reach a
+poor conclusion, which is why every link carries its own confidence and why
+falsifiers are a required part of every Brief.
+
+**Indirect links are the model's judgement, not a fact.** The inference layer
+finds connections the text never states. Those are labelled as inference
+everywhere they appear, and they are the part of a Brief most worth arguing
+with.
+
+**Coverage is uneven.** Eight news sources is not the whole market. A story
+carried only by a publisher Nightdesk does not read will not appear, and the
+desk will say nothing rather than know it missed something.
+
+**Prices are a day old by construction.** End-of-day closes for the underlying
+share, not the token, and not live. See the section above.
+
+**Free-tier capacity is not guaranteed.** The preferred model returned
+"experiencing high demand" three times in one afternoon during development.
+The fallback chain and the pre-captured worked example exist because of that,
+not in anticipation of it.
+
+**Single-event analysis.** A Brief reasons about one event at a time. It does
+not aggregate several overnight events into a combined view of a portfolio, and
+it holds no memory of yesterday's Briefs.
+
+**No backtesting.** Nothing here has been tested against whether its reasoning
+predicted subsequent price moves. No claim of accuracy is made, and none should
+be inferred from the confidence marks — those describe how well-supported a
+claim is, not how often such claims turn out right.
 
 ## Security
 
