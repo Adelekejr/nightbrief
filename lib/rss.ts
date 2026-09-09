@@ -147,6 +147,8 @@ function itemsFrom(xml: string, source: Source): FeedItem[] {
 export async function fetchSource(
   source: Source,
   timeoutMs = 6000,
+  /** Probe a candidate URL instead of the configured one. */
+  urlOverride?: string,
 ): Promise<{ result: SourceResult; items: FeedItem[] }> {
   const started = Date.now()
   const controller = new AbortController()
@@ -155,7 +157,7 @@ export async function fetchSource(
   const base = { sourceId: source.id, publisher: source.publisher }
 
   try {
-    const res = await fetch(source.feed, {
+    const res = await fetch(urlOverride ?? source.feed, {
       signal: controller.signal,
       headers: {
         // Several publishers reject unidentified clients outright.

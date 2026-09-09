@@ -19,6 +19,31 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   const results: SourceResult[] = settled.map((s) => s.result)
   const live = results.filter((r) => r.ok && r.itemCount > 0)
 
+  // ?probe=1&alternates=1 also tries each candidate URL, so a dead feed can be
+  // repaired from measurement rather than from guesswork.
+  if (probe && req.query.alternates === '1') {
+    const candidates: Array<{ sourceId: string; url: string }> = []
+    for (const source of SOURCES) {
+      for (const url of source.alternates ?? []) candidates.push({ sourceId: source.id, url })
+    }
+
+    const tried = await Promise.all(
+      candidates.map(async ({ sourceId, url }) => {
+        const source = SOURCES.find((s) => s.id === sourceId)!
+        const { result } = await fetchSource(source, 8000, url)
+        return { sourceId, url, ok: result.ok, status: result.status, items: result.itemCount, error: result.error }
+      }),
+    )
+
+    res.setHeader('cache-control', 'no-store')
+    res.status(200).json({
+      probedAt: new Date().toISOString(),
+      working: tried.filter((t) => t.ok && t.items > 0),
+      failing: tried.filter((t) => !t.ok || t.items === 0),
+    })
+    return
+  }
+
   if (probe) {
     res.setHeader('cache-control', 'no-store')
     res.status(200).json({

@@ -17,6 +17,12 @@ export type Source = {
   kind: SourceKind
   /** Why a night-desk user should care that this source exists. */
   rationale: string
+  /**
+   * Other URLs the same publisher may serve this feed from. Publishers move
+   * and retire feed paths without notice, and which one answers is a question
+   * about the live network — so the candidates are probed rather than assumed.
+   */
+  alternates?: string[]
 }
 
 export const SOURCES: Source[] = [
@@ -37,6 +43,12 @@ export const SOURCES: Source[] = [
     kind: 'macro',
     rationale:
       'CPI and the employment situation report release at 08:30 ET, before the US open — the classic "priced in overnight" event.',
+    alternates: [
+      'https://www.bls.gov/feed/news_release.rss',
+      'https://www.bls.gov/feed/bls_latest.rss',
+      'https://www.bls.gov/feed/cpi.rss',
+      'https://www.bls.gov/feed/empsit.rss',
+    ],
   },
   {
     id: 'bea-news',
@@ -45,6 +57,11 @@ export const SOURCES: Source[] = [
     homepage: 'https://www.bea.gov/news/current-releases',
     kind: 'macro',
     rationale: 'GDP and PCE inflation, the Fed’s preferred gauge.',
+    alternates: [
+      'https://www.bea.gov/rss/news-release-rss.xml',
+      'https://apps.bea.gov/rss/rss.xml',
+      'https://www.bea.gov/news/rss.xml',
+    ],
   },
   {
     id: 'treasury-press',
@@ -53,6 +70,11 @@ export const SOURCES: Source[] = [
     homepage: 'https://home.treasury.gov/news/press-releases',
     kind: 'macro',
     rationale: 'Sanctions and tariff actions, which move sectors rather than single names.',
+    alternates: [
+      'https://home.treasury.gov/rss/press-releases.xml',
+      'https://home.treasury.gov/news/press-releases/feed',
+      'https://home.treasury.gov/system/files/126/press-releases.xml',
+    ],
   },
   {
     id: 'cnbc-top',
@@ -85,6 +107,10 @@ export const SOURCES: Source[] = [
     homepage: 'https://www.nasdaq.com/news-and-insights/markets',
     kind: 'markets',
     rationale: 'Exchange-side commentary on listed names.',
+    alternates: [
+      'https://www.nasdaq.com/feed/rssoutbound?category=Markets',
+      'https://www.nasdaq.com/feed/nasdaq-original/rss.xml',
+    ],
   },
   {
     id: 'yahoo-market',
@@ -110,6 +136,11 @@ export const SOURCES: Source[] = [
     homepage: 'https://www.sec.gov/litigation/litreleases',
     kind: 'regulatory',
     rationale: 'Enforcement actions against listed issuers.',
+    alternates: [
+      'https://www.sec.gov/news/pressreleases.rss',
+      'https://www.sec.gov/rss/news/press.xml',
+      'https://www.sec.gov/cgi-bin/browse-edgar?action=getcurrent&type=8-K&output=atom',
+    ],
   },
 ]
 
