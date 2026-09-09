@@ -39,10 +39,14 @@ Be sparing. A story that merely mentions technology is not a link to every
 technology company. If you cannot name the mechanism in one clause, there is
 no link and you should return nothing for that story.
 
-Stories that already name a holding are handled elsewhere, so do not bother
-reporting those. What is wanted from you is the connection a reader would
-miss: the foundry story that matters to a chip designer, the energy story
-that matters to a data-centre operator.
+What is most wanted is the connection a reader would miss: the foundry story
+that matters to a chip designer, the energy story that matters to a
+data-centre operator, the tariff story that matters to a company assembling
+hardware abroad. Report those links even when the story also names some other
+holding.
+
+Work through every story before answering. Most will link to nothing, and
+returning nothing for them is the right answer.
 
 Never invent a figure. The "why" is a mechanism, not a claim about price.`
 
@@ -95,6 +99,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   let triage = new Map<string, Array<{ symbol: string; why: string }>>()
   let triageState: 'ok' | 'unavailable' | 'no-key' = 'no-key'
   let triageDetail: string | undefined
+  let rawLinks = 0
+  let unknownSymbols: string[] = []
 
   if (hasKey() && recent.length > 0) {
     const holdingsBlock = held
@@ -116,9 +122,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     if (out.ok) {
       triageState = 'ok'
       const grouped = new Map<string, Array<{ symbol: string; why: string }>>()
+      rawLinks = (out.data.links ?? []).length
       for (const link of out.data.links ?? []) {
         const r = resolve(link.symbol)
-        if (!r.known) continue
+        if (!r.known) {
+          unknownSymbols.push(String(link.symbol).slice(0, 12))
+          continue
+        }
         const list = grouped.get(link.itemId) ?? []
         list.push({ symbol: r.token.symbol, why: String(link.why).slice(0, 240) })
         grouped.set(link.itemId, list)
@@ -144,7 +154,16 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       unverified,
       touchedCount: touched.size,
     },
-    triage: { state: triageState, model: triageState === 'ok' ? TRIAGE_MODEL : undefined, detail: triageDetail },
+    triage: {
+      state: triageState,
+      model: triageState === 'ok' ? TRIAGE_MODEL : undefined,
+      detail: triageDetail,
+      // How many links the model proposed, and how many survived. A large gap
+      // is worth seeing rather than silently absorbing.
+      proposed: rawLinks,
+      surfaced: ranked.reduce((n, e) => n + e.inferred.length, 0),
+      unknownSymbols: unknownSymbols.slice(0, 8),
+    },
     coverage: {
       storiesConsidered: recent.length,
       liveSources: liveSources.map((s) => ({ id: s.result.sourceId, publisher: s.result.publisher })),

@@ -7,7 +7,8 @@ import type { FeedItem } from '../lib/rss.ts'
 const held = UNIVERSE.filter((t) =>
   ['rNVDA', 'rAMD', 'rINTC', 'rMU', 'rTSLA', 'rSPY', 'rBE'].includes(t.symbol),
 )
-const symbols = (text: string) => directMatches(text, held).map((m) => m.symbol).sort()
+const symbols = (title: string, summary = '') =>
+  directMatches({ title, summary }, held).map((m) => m.symbol).sort()
 
 test('matches company names as publishers write them', () => {
   assert.deepEqual(symbols('Micron Holds Steady as memory prices climb'), ['rMU'])
@@ -32,18 +33,40 @@ test('does not match a name embedded in a longer word', () => {
 })
 
 test('a named holding outranks an inferred one', () => {
-  const named = score({ directCount: 1, inferredCount: 0, closed: false, publishedAt: null, now: 0 })
-  const guessed = score({ directCount: 0, inferredCount: 1, closed: false, publishedAt: null, now: 0 })
+  const named = score({ directCount: 1, broadCount: 0, inferredCount: 0, closed: false, publishedAt: null, now: 0 })
+  const guessed = score({ directCount: 0, broadCount: 0, inferredCount: 1, closed: false, publishedAt: null, now: 0 })
   assert.ok(named > guessed)
+})
+
+test('a benchmark mention in body copy is not a match', () => {
+  // Real headlines from the live feed that were swamping the ranking.
+  assert.deepEqual(
+    symbols('How to invest in a booming stock market', "cheaper than the S&P 500's 14% gain"),
+    [],
+  )
+  assert.deepEqual(
+    symbols('1 Industrials Stock for Long-Term Investors', 'trailed the S&P 500 gain'),
+    [],
+  )
+})
+
+test('an index still matches when the headline is about it', () => {
+  assert.deepEqual(symbols('S&P 500, Dow End Lower As Oil Rallies'), ['rSPY'])
+})
+
+test('a named company outranks a headline that merely names an index', () => {
+  const company = score({ directCount: 1, broadCount: 0, inferredCount: 0, closed: true, publishedAt: null, now: 0 })
+  const index = score({ directCount: 0, broadCount: 1, inferredCount: 0, closed: true, publishedAt: null, now: 0 })
+  assert.ok(company > index, 'Micron news should beat a generic S&P listicle')
 })
 
 test('breadth beats a single holding, and market-shut carries weight', () => {
   const now = Date.now()
-  const broad = score({ directCount: 3, inferredCount: 0, closed: false, publishedAt: null, now })
-  const narrow = score({ directCount: 1, inferredCount: 0, closed: false, publishedAt: null, now })
-  assert.ok(broad > narrow)
+  const wide = score({ directCount: 3, broadCount: 0, inferredCount: 0, closed: false, publishedAt: null, now })
+  const narrow = score({ directCount: 1, broadCount: 0, inferredCount: 0, closed: false, publishedAt: null, now })
+  assert.ok(wide > narrow)
 
-  const shut = score({ directCount: 1, inferredCount: 0, closed: true, publishedAt: null, now })
+  const shut = score({ directCount: 1, broadCount: 0, inferredCount: 0, closed: true, publishedAt: null, now })
   assert.ok(shut > narrow)
 })
 

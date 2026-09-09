@@ -17,7 +17,23 @@ import type { RToken } from './universe.js'
  * Nvidia and buried it.
  */
 
-export type DirectMatch = { symbol: string; term: string }
+export type DirectMatch = {
+  symbol: string
+  term: string
+  where: 'title' | 'summary'
+  /** A broad-market index rather than a single company. */
+  broad: boolean
+}
+
+/**
+ * An index ETF is not "mentioned" in the way a company is. Financial copy says
+ * "the S&P 500" constantly as a benchmark — "1 S&P 500 Stock We Ignore",
+ * "cheaper than the S&P 500" — and none of that is an event touching the
+ * index. So a broad holding only matches on the headline, where a passing
+ * benchmark reference is far less likely, and it scores lower than a named
+ * company when it does.
+ */
+const isBroad = (token: RToken) => token.sector === 'index-etf'
 
 /** Tickers are short enough to collide with ordinary words, so they must be
  *  matched as standalone uppercase tokens. Names are matched case-insensitively. */
@@ -39,17 +55,36 @@ function hits(text: string, token: RToken): string | null {
   return null
 }
 
-export function directMatches(text: string, held: RToken[]): DirectMatch[] {
+export function directMatches(
+  item: { title: string; summary?: string },
+  held: RToken[],
+): DirectMatch[] {
   const found: DirectMatch[] = []
+
   for (const token of held) {
-    const term = hits(text, token)
-    if (term) found.push({ symbol: token.symbol, term })
+    const broad = isBroad(token)
+
+    const inTitle = hits(item.title, token)
+    if (inTitle) {
+      found.push({ symbol: token.symbol, term: inTitle, where: 'title', broad })
+      continue
+    }
+
+    if (broad) continue // benchmark mentions in body copy are not events
+
+    const inSummary = hits(item.summary ?? '', token)
+    if (inSummary) {
+      found.push({ symbol: token.symbol, term: inSummary, where: 'summary', broad })
+    }
   }
   return found
 }
 
 export type RankInput = {
+  /** Named companies. */
   directCount: number
+  /** Named broad-market indices, which are a weaker signal. */
+  broadCount: number
   inferredCount: number
   /** Did the story land while the US cash market was shut? */
   closed: boolean
@@ -68,6 +103,7 @@ export type RankInput = {
  */
 export function score(input: RankInput): number {
   const direct = Math.min(input.directCount, 4) * 100
+  const broad = Math.min(input.broadCount, 2) * 40
   const inferred = Math.min(input.inferredCount, 4) * 45
   const shut = input.closed ? 30 : 0
 
@@ -77,7 +113,7 @@ export function score(input: RankInput): number {
     if (Number.isFinite(hours)) recency = Math.max(0, 36 - Math.max(0, hours))
   }
 
-  return direct + inferred + shut + recency
+  return direct + broad + inferred + shut + recency
 }
 
 export type RankedEvent = {
@@ -99,7 +135,7 @@ export function rank(
 
   return items
     .map((item): RankedEvent => {
-      const direct = directMatches(`${item.title} ${item.summary}`, held)
+      const direct = directMatches(item, held)
       const directSymbols = new Set(direct.map((d) => d.symbol))
 
       // A holding already named in the story does not also need inferring.
@@ -113,7 +149,8 @@ export function rank(
         inferred,
         symbols: [...directSymbols, ...inferred.map((i) => i.symbol)],
         score: score({
-          directCount: direct.length,
+          directCount: direct.filter((d) => !d.broad).length,
+          broadCount: direct.filter((d) => d.broad).length,
           inferredCount: inferred.length,
           closed: item.session?.closed ?? false,
           publishedAt: item.publishedAt,
