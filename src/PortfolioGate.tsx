@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Mono } from './ui'
+import { Chip, Mono, PrimaryButton, SecondaryButton } from './ui'
 
 type Token = { symbol: string; name: string; underlying: string; sector: string }
 
@@ -38,7 +38,7 @@ export default function PortfolioGate({
 
   return (
     <div>
-      <p className="font-serif text-[19px] leading-relaxed text-paper">
+      <p className="font-serif text-display text-paper">
         {editing
           ? 'Change what Nightbrief watches on your behalf. The overnight desk is rebuilt against whatever you leave selected.'
           : 'Tell Nightbrief what you hold. It will work out which of the events that broke while New York was shut actually reach your positions.'}
@@ -46,14 +46,14 @@ export default function PortfolioGate({
 
       <section className="mt-8">
         <div className="mb-3 flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
-          <h2 className="font-serif text-[13px] font-semibold tracking-wide text-paper/50">
+          <h2 className="font-serif text-caption font-semibold tracking-wide text-paper-mid">
             Your portfolio · {picked.length} selected
           </h2>
           {picked.length > 0 && (
             <button
               type="button"
               onClick={() => setPicked([])}
-              className="font-serif text-[13px] text-paper/45 underline underline-offset-2 hover:text-signal"
+              className="font-serif text-caption text-paper-low underline underline-offset-2 hover:text-signal"
             >
               Clear all
             </button>
@@ -61,37 +61,27 @@ export default function PortfolioGate({
         </div>
 
         {failed ? (
-          <p className="font-serif text-[15px] leading-relaxed text-inferred">
+          <p className="font-serif text-body text-inferred">
             The verified listing could not be loaded. Nothing is shown here that
             was not fetched, so there is nothing to pick from until it returns.
           </p>
         ) : tokens.length === 0 ? (
-          <Mono className="text-[11px] text-paper/40">loading the verified listing…</Mono>
+          <Mono className="text-micro text-paper-low">loading the verified listing…</Mono>
         ) : (
           <div className="flex flex-wrap gap-1.5">
-            {tokens.map((t) => {
-              const on = picked.includes(t.symbol)
-              return (
-                <button
-                  key={t.symbol}
-                  type="button"
-                  aria-pressed={on}
-                  onClick={() => toggle(t.symbol)}
-                  title={t.name}
-                  className={`rounded-[2px] border px-2.5 py-2 font-mono text-[12px] transition-colors ${
-                    on
-                      ? 'border-signal bg-signal/10 text-signal'
-                      : 'border-rule text-paper/60 hover:border-paper/30'
-                  }`}
-                >
-                  {t.symbol}
-                </button>
-              )
-            })}
+            {tokens.map((t) => (
+              <Chip
+                key={t.symbol}
+                label={t.symbol}
+                title={t.name}
+                selected={picked.includes(t.symbol)}
+                onClick={() => toggle(t.symbol)}
+              />
+            ))}
           </div>
         )}
 
-        <p className="mt-3 font-serif text-[13px] leading-relaxed text-paper/45">
+        <p className="mt-3 font-serif text-caption text-paper-low">
           Eighteen rToken pairs, read off Bitget on 8 September 2026. The listing
           is longer than this — anything absent is unverified by us, not absent
           from the exchange.
@@ -99,32 +89,21 @@ export default function PortfolioGate({
       </section>
 
       <div className="mt-8 flex flex-col gap-3">
-        <button
-          type="button"
-          disabled={picked.length === 0}
-          onClick={() => onReady(picked)}
-          className="w-full rounded-[2px] border border-signal bg-signal/10 py-3 font-serif text-[16px] text-signal disabled:border-rule disabled:bg-transparent disabled:text-paper/25"
-        >
+        <PrimaryButton disabled={picked.length === 0} onClick={() => onReady(picked)}>
           {picked.length === 0
             ? 'Pick at least one holding'
             : editing
               ? `Rebuild the desk against ${picked.length} holding${picked.length > 1 ? 's' : ''}`
               : `Check the overnight against ${picked.length} holding${picked.length > 1 ? 's' : ''}`}
-        </button>
+        </PrimaryButton>
 
-        <button
-          type="button"
-          onClick={() => onReady(SAMPLE)}
-          className="w-full rounded-[2px] border border-rule py-3 font-serif text-[15px] text-paper/70 hover:border-paper/30"
-        >
-          Use the sample portfolio
-        </button>
+        <SecondaryButton onClick={() => onReady(SAMPLE)}>Use the sample portfolio</SecondaryButton>
 
         {onCancel && (
           <button
             type="button"
             onClick={onCancel}
-            className="w-full py-2 font-serif text-[14px] text-paper/45 hover:text-paper/70"
+            className="w-full py-2 font-serif text-caption text-paper-low hover:text-paper-mid"
           >
             Leave it as it was
           </button>

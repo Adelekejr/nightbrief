@@ -1,18 +1,61 @@
 @import "tailwindcss";
 
-@theme {
-  /* Nightdesk — "Dispatch". Warm near-black, not pure black: less glare at 6am. */
-  --color-ink: #16130f;
-  --color-ink-raised: #1e1a15;
-  --color-paper: #ede6d8;
-  --color-rule: #302a23;
+/**
+ * Nightbrief's visual system.
+ *
+ * MATERIAL — paper. Warm near-black stock, cream ink, amber annotation. The
+ * ink tones are solid colours rather than opacities: printed ink does not go
+ * translucent, and solid values make contrast a decision rather than an
+ * accident of stacking.
+ *
+ * STRUCTURE — Swiss. Six type sizes, no more. Hierarchy is carried by size,
+ * weight and space, never by borders, fills or boxes.
+ *
+ * No gradients, no glass, no shadows, no cards. Where something needs to feel
+ * heavier, it gets weight and contrast.
+ */
 
-  /* One accent. Amber carries the verdict and the live indicators. */
+@theme {
+  /* ---- stock ---------------------------------------------------------- */
+  --color-ink: #16130f;
+  /* Inputs only, where a surface has to read as recessed against the page. */
+  --color-ink-sunk: #100e0b;
+
+  /* ---- ink ------------------------------------------------------------ */
+  --color-paper: #ede6d8;
+  --color-paper-mid: #a79d8d;
+  --color-paper-low: #736a5c;
+
+  /* ---- rules ---------------------------------------------------------- */
+  --color-rule: #2e2820;
+  --color-rule-strong: #494036;
+
+  /* ---- annotation ----------------------------------------------------- */
   --color-signal: #e8a33d;
-  /* Anything the model inferred rather than retrieved. */
+  --color-signal-deep: #b87d23;
+  /* Text sitting on a filled amber block. */
+  --color-signal-on: #16130f;
+
+  /* Model inference, cooler than the page so it reads as a different voice. */
   --color-inferred: #8ba1b3;
-  /* Reserved for exactly one thing: what would falsify the reasoning. */
+  /* Reserved for one thing only: what would prove the reasoning wrong. */
   --color-falsify: #d9614c;
+
+  /* ---- type scale ------------------------------------------------------
+   * Six steps. A financial interface drifts toward terminal density by
+   * acquiring sizes one at a time; a fixed scale is what prevents it.       */
+  --text-micro: 0.6875rem;      /* 11px — mono metadata, labels */
+  --text-micro--line-height: 1.45;
+  --text-caption: 0.8125rem;    /* 13px — secondary prose */
+  --text-caption--line-height: 1.5;
+  --text-body: 0.9375rem;       /* 15px — reading size */
+  --text-body--line-height: 1.62;
+  --text-lede: 1.0625rem;       /* 17px — chain links, event rows */
+  --text-lede--line-height: 1.42;
+  --text-display: 1.3125rem;    /* 21px — section answers */
+  --text-display--line-height: 1.32;
+  --text-page: 1.6875rem;       /* 27px — the one conclusion per page */
+  --text-page--line-height: 1.24;
 
   --font-serif: "Newsreader", ui-serif, Georgia, serif;
   --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
@@ -32,7 +75,32 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
+/* Every control moves under the finger. Position, not shadow. */
+button,
+[role='button'] {
+  transition: background-color 120ms ease, border-color 120ms ease, transform 60ms ease;
+}
+button:active:not(:disabled) {
+  transform: translateY(1px);
+}
+
+/* Focus is a printed mark, not a glow. */
+:where(button, a, textarea, [tabindex]):focus-visible {
+  outline: 2px solid var(--color-signal);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  button,
+  [role='button'] {
+    transition: none;
+  }
+  button:active:not(:disabled) {
+    transform: none;
+  }
+}
+
 ::selection {
   background: var(--color-signal);
-  color: var(--color-ink);
+  color: var(--color-signal-on);
 }

@@ -34,15 +34,15 @@ function Masthead({
   return (
     <header className="border-b border-rule pb-5">
       <button type="button" onClick={onHome} className="text-left">
-        <h1 className="font-serif text-[28px] font-semibold tracking-tight text-paper">
+        <h1 className="font-serif text-page font-semibold tracking-tight text-paper">
           Nightbrief
         </h1>
       </button>
-      <p className="mt-1 max-w-md font-serif text-[14px] leading-snug text-paper/55">
+      <p className="mt-1 max-w-md font-serif text-caption text-paper-mid">
         Investigates what broke while the US market was shut, and works out
         which of your tokenized holdings it reaches.
       </p>
-      <p className="mt-3 font-mono text-[11px] tracking-wide text-paper/45">
+      <p className="mt-3 font-mono text-micro tracking-wide text-paper-low">
         {now.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
         {" · "}
         {Intl.DateTimeFormat().resolvedOptions().timeZone}
@@ -175,7 +175,7 @@ export default function App() {
           {brief.data.captured && (
             <p className="mb-6 flex flex-wrap items-center gap-2">
               <SampleStamp label="Worked example" />
-              <span className="font-serif text-[13px] text-paper/55">
+              <span className="font-serif text-caption text-paper-mid">
                 A real run, captured and replayed.
               </span>
             </p>
@@ -183,7 +183,7 @@ export default function App() {
           {brief.data.demo && (
             <p className="mb-6 flex flex-wrap items-center gap-2">
               <SampleStamp />
-              <span className="font-serif text-[13px] text-paper/55">
+              <span className="font-serif text-caption text-paper-mid">
                 {brief.data.demo}
               </span>
             </p>
@@ -192,7 +192,7 @@ export default function App() {
           <button
             type="button"
             onClick={() => navigate("overnight")}
-            className="mt-2 w-full rounded-[2px] border border-rule py-3 font-serif text-[15px] text-paper/70 hover:border-paper/30"
+            className="mt-2 w-full border border-rule py-3 font-serif text-body text-paper-mid hover:border-paper/30"
           >
             Back to the overnight desk
           </button>
@@ -201,27 +201,27 @@ export default function App() {
 
       {brief.at === "failed" && (
         <div className="mt-6">
-          <p className="font-serif text-[19px] leading-snug text-paper">
+          <p className="font-serif text-display text-paper">
             {failureCopy(brief.kind, brief.reason).title}
           </p>
-          <p className="mt-3 font-serif text-[15px] leading-relaxed text-paper/70">
+          <p className="mt-3 font-serif text-body text-paper-mid">
             {failureCopy(brief.kind, brief.reason).body}
           </p>
           <p className="mt-2">
-            <Mono className="text-[10px] text-paper/40">{brief.kind}</Mono>
+            <Mono className="text-micro text-paper-low">{brief.kind}</Mono>
           </p>
           <div className="mt-6 flex flex-col gap-3">
             <button
               type="button"
               onClick={openExample}
-              className="w-full rounded-[2px] border border-signal py-3 font-serif text-[15px] text-signal"
+              className="w-full border border-signal bg-signal py-3.5 font-serif text-body font-semibold text-signal-on hover:border-signal-deep hover:bg-signal-deep"
             >
               Read the worked example instead
             </button>
             <button
               type="button"
               onClick={() => navigate("overnight")}
-              className="w-full rounded-[2px] border border-rule py-3 font-serif text-[15px] text-paper/70"
+              className="w-full border border-rule py-3 font-serif text-body text-paper-mid"
             >
               Back to the overnight desk
             </button>
@@ -261,7 +261,7 @@ export default function App() {
             <>
               <PortfolioGate initial={holdings} onReady={commitHoldings} />
               <div className="mt-8 border-t border-rule pt-6">
-                <p className="font-serif text-[14px] leading-relaxed text-paper/60">
+                <p className="font-serif text-caption text-paper-mid">
                   Or read a complete worked example first — a real story that
                   broke while New York was shut, followed all the way to the
                   holdings it reaches.
@@ -269,7 +269,7 @@ export default function App() {
                 <button
                   type="button"
                   onClick={openExample}
-                  className="mt-2 font-serif text-[15px] text-signal underline underline-offset-4"
+                  className="mt-2 font-serif text-body text-signal underline underline-offset-4"
                 >
                   Read the worked example →
                 </button>
@@ -308,13 +308,13 @@ export default function App() {
               )}
               {overnight.at === "failed" && (
                 <div className="mt-6">
-                  <p className="font-serif text-[19px] leading-snug text-paper">
+                  <p className="font-serif text-display text-paper">
                     The overnight desk could not be assembled.
                   </p>
-                  <p className="mt-3 font-serif text-[15px] leading-relaxed text-paper/70">
+                  <p className="mt-3 font-serif text-body text-paper-mid">
                     {overnight.reason}
                   </p>
-                  <p className="mt-3 font-serif text-[14px] leading-relaxed text-inferred">
+                  <p className="mt-3 font-serif text-caption text-inferred">
                     Nothing is shown in place of it. An empty desk here would
                     read as “nothing happened overnight”, which is not what was
                     found.
@@ -322,7 +322,7 @@ export default function App() {
                   <button
                     type="button"
                     onClick={() => fetchOvernight(holdings)}
-                    className="mt-6 w-full rounded-[2px] border border-signal py-3 font-serif text-[15px] text-signal"
+                    className="mt-6 w-full border border-signal bg-signal py-3.5 font-serif text-body font-semibold text-signal-on hover:border-signal-deep hover:bg-signal-deep"
                   >
                     Try again
                   </button>

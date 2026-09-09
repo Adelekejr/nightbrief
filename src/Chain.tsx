@@ -31,14 +31,14 @@ export function StageRail({ current }: { current: Stage }) {
         return (
           <span key={s} className="flex items-baseline gap-2">
             <Mono
-              className={`text-[10px] tracking-wide ${
-                here ? 'text-signal' : passed ? 'text-paper/35' : 'text-paper/20'
+              className={`text-micro tracking-wide ${
+                here ? 'font-medium text-signal' : passed ? 'text-paper-mid' : 'text-paper-low'
               }`}
             >
               {s}
             </Mono>
             {i < STAGES.length - 1 && (
-              <span aria-hidden className="font-mono text-[10px] text-paper/15">
+              <span aria-hidden className="font-mono text-micro text-rule-strong">
                 ›
               </span>
             )}
@@ -67,14 +67,14 @@ export function StageSection({
     <section className="relative mt-11 border-t border-rule pt-5" id={`stage-${stage}`}>
       <div className="mb-4">
         <p className="flex items-baseline gap-2">
-          <Mono className="text-[10px] text-signal">
+          <Mono className="text-micro text-signal">
             {String(index).padStart(2, '0')}
           </Mono>
-          <Mono className="text-[10px] tracking-wide text-paper/40">{stage}</Mono>
+          <Mono className="text-micro tracking-wide text-paper-low">{stage}</Mono>
         </p>
-        <h2 className="mt-1.5 font-serif text-[19px] leading-snug text-paper">{title}</h2>
+        <h2 className="mt-1.5 font-serif text-display text-paper">{title}</h2>
         {lede && (
-          <p className="mt-1.5 font-serif text-[13px] leading-relaxed text-paper/50">{lede}</p>
+          <p className="mt-1.5 font-serif text-caption text-paper-mid">{lede}</p>
         )}
       </div>
       {children}
@@ -90,8 +90,8 @@ export function Marker({ kind }: { kind: 'fact' | 'inference' | 'unknown' }) {
   const style = {
     fact: 'text-signal',
     inference: 'text-inferred',
-    unknown: 'text-paper/45',
+    unknown: 'text-paper-low',
   }[kind]
 
-  return <Mono className={`text-[10px] tracking-wide ${style}`}>{kind}</Mono>
+  return <Mono className={`text-micro tracking-wide ${style}`}>{kind}</Mono>
 }

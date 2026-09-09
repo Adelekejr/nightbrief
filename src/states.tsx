@@ -46,23 +46,23 @@ export function Working({
 
   return (
     <div className="mt-10" role="status" aria-live="polite">
-      <p className="font-serif text-[18px] leading-relaxed text-paper/85">{headline}</p>
+      <p className="font-serif text-lede text-paper">{headline}</p>
 
       <ul className="mt-4 space-y-1.5">
         {steps.map((s) => (
           <li key={s} className="flex items-baseline gap-2">
-            <Mono className="text-[10px] text-paper/25">·</Mono>
-            <span className="font-serif text-[14px] leading-relaxed text-paper/55">{s}</span>
+            <Mono className="text-micro text-paper-low">·</Mono>
+            <span className="font-serif text-caption text-paper-mid">{s}</span>
           </li>
         ))}
       </ul>
 
-      <p className="mt-5 font-mono text-[11px] text-paper/45">
+      <p className="mt-5 font-mono text-micro text-paper-low">
         {elapsed}s elapsed · typically 15 to 40 seconds on the free model tier
       </p>
 
       {still && (
-        <p className="mt-2 font-serif text-[14px] leading-relaxed text-inferred">
+        <p className="mt-2 font-serif text-caption text-inferred">
           Still working. The free tier queues requests when it is busy, and this
           one has not been dropped.
         </p>
@@ -131,8 +131,8 @@ export function ConfidenceLegend() {
         ['low', 'Plausible and worth knowing, but the evidence is thin. Treat as a prompt to check, not a finding.'],
       ].map(([k, v]) => (
         <div key={k} className="contents">
-          <dt className="font-mono text-[11px] text-paper/50">{k}</dt>
-          <dd className="font-serif text-[13px] leading-relaxed text-paper/65">{v}</dd>
+          <dt className="font-mono text-micro text-paper-mid">{k}</dt>
+          <dd className="font-serif text-caption text-paper-mid">{v}</dd>
         </div>
       ))}
     </dl>

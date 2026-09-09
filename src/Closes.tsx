@@ -36,14 +36,14 @@ export default function Closes({ symbols }: { symbols: string[] }) {
 
   if (failed) {
     return (
-      <p className="font-serif text-[13px] leading-relaxed text-inferred">
+      <p className="font-serif text-caption text-inferred">
         Closing prices could not be fetched. None are shown rather than a stale
         one being presented as current.
       </p>
     )
   }
 
-  if (!data) return <Mono className="text-[10px] text-paper/35">fetching closes…</Mono>
+  if (!data) return <Mono className="text-micro text-paper-low">fetching closes…</Mono>
 
   const byDate = new Map<string, Close[]>()
   for (const c of data.closes) byDate.set(c.date, [...(byDate.get(c.date) ?? []), c])
@@ -54,13 +54,13 @@ export default function Closes({ symbols }: { symbols: string[] }) {
         <ul className="divide-y divide-rule border-y border-rule">
           {data.closes.map((c) => (
             <li key={c.symbol} className="flex items-baseline justify-between gap-4 py-2">
-              <Mono className="text-[12px] text-paper/70">
+              <Mono className="text-caption text-paper-mid">
                 {c.symbol}
-                <span className="text-paper/35"> · {c.ticker}</span>
+                <span className="text-paper-low"> · {c.ticker}</span>
               </Mono>
-              <Mono className="text-[12px] text-paper">
+              <Mono className="text-caption text-paper">
                 {c.close.toFixed(2)}
-                <span className="text-paper/35"> USD · {c.date}</span>
+                <span className="text-paper-low"> USD · {c.date}</span>
               </Mono>
             </li>
           ))}
@@ -68,17 +68,17 @@ export default function Closes({ symbols }: { symbols: string[] }) {
       )}
 
       {data.unavailable.length > 0 && (
-        <p className="mt-2 font-mono text-[10px] leading-relaxed text-paper/40">
+        <p className="mt-2 font-mono text-micro text-paper-low">
           no close for {data.unavailable.map((u) => u.symbol ?? u.ticker).join(', ')} —{' '}
           {data.unavailable[0].reason}
         </p>
       )}
 
       {data.closes.length > 0 && (
-        <p className="mt-3 font-serif text-[13px] leading-relaxed text-paper/50">
-          Closing price of the <span className="text-paper/75">underlying US share</span>, from{' '}
+        <p className="mt-3 font-serif text-caption text-paper-mid">
+          Closing price of the <span className="text-paper-mid">underlying US share</span>, from{' '}
           {[...new Set(data.closes.map((c) => c.providerLabel))].join(' and ')}. Not a live quote,
-          and <span className="text-paper/75">not the rToken price</span> — an rToken trades around
+          and <span className="text-paper-mid">not the rToken price</span> — an rToken trades around
           the clock and can move apart from the share it tracks, most of all while the US market is
           shut.
         </p>

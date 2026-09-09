@@ -25,7 +25,7 @@ export default function TopBar({
         <button
           type="button"
           onClick={onHome}
-          className="font-serif text-[15px] font-semibold tracking-tight text-paper hover:text-signal"
+          className="font-serif text-lede font-semibold tracking-tight text-paper hover:text-signal"
         >
           Nightbrief
         </button>
@@ -34,13 +34,13 @@ export default function TopBar({
           type="button"
           onClick={onEditHoldings}
           aria-current={editing ? 'page' : undefined}
-          className={`rounded-[2px] border px-2.5 py-1.5 transition-colors ${
+          className={`border px-2.5 py-1.5 ${
             editing
               ? 'border-signal bg-signal/10'
               : 'border-rule hover:border-paper/30'
           }`}
         >
-          <Mono className={`text-[11px] ${editing ? 'text-signal' : 'text-paper/70'}`}>
+          <Mono className={`text-micro font-medium ${editing ? 'text-signal-on' : 'text-paper-mid'}`}>
             {count === 0 ? 'Set your portfolio' : `Portfolio · ${count}`}
           </Mono>
         </button>

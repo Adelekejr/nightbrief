@@ -22,11 +22,11 @@ export default function BriefView({ data }: { data: AnalysisResponse }) {
   return (
     <article className="pb-16">
       {/* ---- conclusion, before anything else ------------------------- */}
-      <p className="font-serif text-[23px] leading-[1.32] text-paper">{brief.headline}</p>
+      <p className="font-serif text-page text-paper">{brief.headline}</p>
 
       {/* ---- who is exposed, at a glance ------------------------------ */}
       {brief.exposures.length === 0 ? (
-        <p className="mt-5 border-l-2 border-rule pl-3 font-serif text-[15px] leading-relaxed text-inferred">
+        <p className="mt-5 border-l-2 border-rule pl-3 font-serif text-body text-inferred">
           The chain did not reach any of your holdings. That is a conclusion,
           not a gap — the reasoning below shows where it stops.
         </p>
@@ -35,8 +35,8 @@ export default function BriefView({ data }: { data: AnalysisResponse }) {
           {brief.exposures.map((e) => (
             <li key={e.symbol} className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1 py-3">
               <span className="flex items-baseline gap-2">
-                <Mono className="text-[15px] font-bold text-signal">{e.symbol}</Mono>
-                <span className="font-serif text-[13px] text-paper/50">
+                <Mono className="text-body font-bold text-signal">{e.symbol}</Mono>
+                <span className="font-serif text-caption text-paper-mid">
                   {held.get(e.symbol)?.name}
                 </span>
               </span>
@@ -50,10 +50,10 @@ export default function BriefView({ data }: { data: AnalysisResponse }) {
       )}
 
       {untouched.length > 0 && (
-        <p className="mt-3 font-serif text-[13px] leading-relaxed text-paper/45">
+        <p className="mt-3 font-serif text-caption text-paper-low">
           Checked and not reached:{' '}
           {untouched.map((h) => (
-            <Mono key={h.symbol} className="text-[12px] text-paper/40">
+            <Mono key={h.symbol} className="text-caption text-paper-low">
               {h.symbol}{' '}
             </Mono>
           ))}
@@ -61,8 +61,8 @@ export default function BriefView({ data }: { data: AnalysisResponse }) {
       )}
 
       {data.holdings.unverified.length > 0 && (
-        <p className="mt-4 border-l-2 border-signal/40 pl-3 font-serif text-[14px] leading-relaxed text-paper/70">
-          <Mono className="text-[12px] text-paper">
+        <p className="mt-4 border-l-2 border-signal/40 pl-3 font-serif text-caption text-paper-mid">
+          <Mono className="text-caption text-paper">
             {data.holdings.unverified.join(', ')}
           </Mono>{' '}
           could not be matched to the verified rToken listing, so they were left
@@ -76,7 +76,7 @@ export default function BriefView({ data }: { data: AnalysisResponse }) {
 
       {/* ---- 01 event -------------------------------------------------- */}
       <StageSection stage="event" title="What happened" lede="Extracted from the source, not summarised loosely.">
-        <p className="font-serif text-[16px] leading-relaxed text-paper/90">
+        <p className="font-serif text-lede text-paper">
           {brief.event.summary}
         </p>
 
@@ -88,13 +88,13 @@ export default function BriefView({ data }: { data: AnalysisResponse }) {
             ['entities', brief.event.entities.join(', ') || 'none named'],
           ].map(([k, v]) => (
             <div key={k} className="contents">
-              <dt className="font-mono text-[11px] text-paper/40">{k}</dt>
-              <dd className="font-mono text-[11px] text-paper/75">{v}</dd>
+              <dt className="font-mono text-micro text-paper-low">{k}</dt>
+              <dd className="font-mono text-micro text-paper-mid">{v}</dd>
             </div>
           ))}
         </dl>
 
-        <p className="mt-3 border-l-2 border-inferred/30 pl-3 font-serif text-[14px] leading-relaxed text-inferred">
+        <p className="mt-3 border-l-2 border-inferred/30 pl-3 font-serif text-caption text-inferred">
           <Marker kind="inference" />{' '}
           {brief.event.magnitudeBasis}
         </p>
@@ -110,11 +110,11 @@ export default function BriefView({ data }: { data: AnalysisResponse }) {
           <div key={s.id} className="mb-4">
             <div className="flex flex-wrap items-baseline gap-x-2 gap-y-1">
               <SourceChip id={s.id} href={s.url} />
-              <Mono className="text-[11px] text-paper/60">{s.publisher}</Mono>
+              <Mono className="text-micro text-paper-mid">{s.publisher}</Mono>
               {s.unverifiedOrigin && <SampleStamp label="Unverified origin" />}
             </div>
 
-            <p className="mt-1.5 font-serif text-[15px] leading-snug text-paper/85">
+            <p className="mt-1.5 font-serif text-body text-paper">
               {s.url ? (
                 <a href={s.url} target="_blank" rel="noreferrer noopener" className="hover:text-signal">
                   {s.title}
@@ -127,7 +127,7 @@ export default function BriefView({ data }: { data: AnalysisResponse }) {
             <p className="mt-1 flex flex-wrap items-baseline gap-x-3">
               <TimeStamp iso={s.publishedAt} session={s.sessionLabel} />
               {s.body && (
-                <Mono className="text-[10px] text-paper/35">
+                <Mono className="text-micro text-paper-low">
                   {s.body.retrieved
                     ? `full article read · ${s.body.chars} chars`
                     : `body not retrieved — ${s.body.reason}`}
@@ -141,7 +141,7 @@ export default function BriefView({ data }: { data: AnalysisResponse }) {
           <ul className="mt-5 space-y-3">
             {brief.quotes.map((q, i) => (
               <li key={i} className="border-l-2 border-signal/50 pl-3">
-                <p className="font-serif text-[15px] leading-relaxed text-paper">“{q.text}”</p>
+                <p className="font-serif text-body text-paper">“{q.text}”</p>
                 <p className="mt-1 flex items-baseline gap-2">
                   <Marker kind="fact" />
                   <SourceChip id={q.sourceId} href={sourceUrl(q.sourceId)} />
@@ -150,7 +150,7 @@ export default function BriefView({ data }: { data: AnalysisResponse }) {
             ))}
           </ul>
         ) : (
-          <p className="font-serif text-[14px] leading-relaxed text-paper/50">
+          <p className="font-serif text-caption text-paper-mid">
             No passage survived the verbatim check, so none is quoted here.
           </p>
         )}
@@ -167,7 +167,7 @@ export default function BriefView({ data }: { data: AnalysisResponse }) {
             <li key={step.step}>
               <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
                 <span className="flex items-baseline gap-2">
-                  <Mono className="text-[11px] text-paper/40">
+                  <Mono className="text-micro text-paper-low">
                     {String(step.step).padStart(2, '0')}
                   </Mono>
                   <Marker kind={step.basis === 'retrieved' ? 'fact' : 'inference'} />
@@ -175,17 +175,17 @@ export default function BriefView({ data }: { data: AnalysisResponse }) {
                 <ConfidenceMark level={step.confidence} />
               </div>
 
-              <p className="mt-2 font-serif text-[16px] leading-snug text-paper">
+              <p className="mt-2 font-serif text-lede text-paper">
                 {step.from}
               </p>
-              <p className="my-1 font-mono text-[13px] text-signal">↓</p>
-              <p className="font-serif text-[16px] leading-snug text-paper">{step.to}</p>
+              <p className="my-1 font-mono text-caption text-signal">↓</p>
+              <p className="font-serif text-lede text-paper">{step.to}</p>
 
               <p
-                className={`mt-2 border-l-2 pl-3 font-serif text-[15px] leading-relaxed ${
+                className={`mt-2 border-l-2 pl-3 font-serif text-body ${
                   step.basis === 'inferred'
                     ? 'border-inferred/30 text-inferred'
-                    : 'border-signal/40 text-paper/85'
+                    : 'border-signal/40 text-paper'
                 }`}
               >
                 {step.mechanism}
@@ -210,7 +210,7 @@ export default function BriefView({ data }: { data: AnalysisResponse }) {
         lede="Direction of sensitivity. Nightbrief does not tell you what to do about it."
       >
         {brief.exposures.length === 0 ? (
-          <p className="font-serif text-[15px] leading-relaxed text-inferred">
+          <p className="font-serif text-body text-inferred">
             None of your holdings sit at the end of this chain.
           </p>
         ) : (
@@ -219,22 +219,22 @@ export default function BriefView({ data }: { data: AnalysisResponse }) {
               <li key={e.symbol}>
                 <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
                   <span className="flex items-baseline gap-2">
-                    <Mono className="text-[15px] font-bold text-signal">{e.symbol}</Mono>
-                    <span className="font-serif text-[13px] text-paper/50">
+                    <Mono className="text-body font-bold text-signal">{e.symbol}</Mono>
+                    <span className="font-serif text-caption text-paper-mid">
                       {held.get(e.symbol)?.name}
                     </span>
                   </span>
                   <SensitivityMark direction={e.direction} />
                 </div>
 
-                <p className="mt-2 font-serif text-[15px] leading-relaxed text-paper/85">
+                <p className="mt-2 font-serif text-body text-paper">
                   {e.rationale}
                 </p>
 
                 <p className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1">
                   <ConfidenceMark level={e.confidence} />
                   {e.chainSteps.length > 0 && (
-                    <Mono className="text-[10px] text-paper/40">
+                    <Mono className="text-micro text-paper-low">
                       follows steps {e.chainSteps.join(', ')}
                     </Mono>
                   )}
@@ -247,7 +247,7 @@ export default function BriefView({ data }: { data: AnalysisResponse }) {
 
       {/* ---- where the shares last closed ------------------------------- */}
       <section className="mt-8">
-        <h3 className="mb-3 font-serif text-[13px] font-semibold tracking-wide text-paper/50">
+        <h3 className="mb-3 font-serif text-caption font-semibold tracking-wide text-paper-mid">
           Where the underlying shares last closed
         </h3>
         <Closes symbols={data.holdings.verified.map((h) => h.symbol)} />
@@ -259,7 +259,7 @@ export default function BriefView({ data }: { data: AnalysisResponse }) {
         title="How far to trust this"
         lede="What the checks removed, and what would show the reasoning is wrong."
       >
-        <p className="font-serif text-[15px] leading-relaxed text-paper/80">
+        <p className="font-serif text-body text-paper">
           Every claim was tested against the sources before you saw it. A claim
           citing a source that was never supplied is removed. So is a quote that
           is not word for word in the source it names, and a figure that appears
@@ -274,8 +274,8 @@ export default function BriefView({ data }: { data: AnalysisResponse }) {
             ['figures redacted', String(validation.figuresRedacted)],
           ].map(([k, v]) => (
             <div key={k} className="contents">
-              <dt className="font-mono text-[11px] text-paper/40">{k}</dt>
-              <dd className="font-mono text-[11px] text-paper/75">{v}</dd>
+              <dt className="font-mono text-micro text-paper-low">{k}</dt>
+              <dd className="font-mono text-micro text-paper-mid">{v}</dd>
             </div>
           ))}
         </dl>
@@ -283,7 +283,7 @@ export default function BriefView({ data }: { data: AnalysisResponse }) {
         {validation.rejections.length > 0 && (
           <ul className="mt-4 space-y-1.5 border-l-2 border-falsify/50 pl-3">
             {validation.rejections.map((r, i) => (
-              <li key={i} className="font-mono text-[11px] leading-relaxed text-falsify/90">
+              <li key={i} className="font-mono text-micro text-falsify/90">
                 removed {r.reference} — {r.reason}
               </li>
             ))}
@@ -293,14 +293,14 @@ export default function BriefView({ data }: { data: AnalysisResponse }) {
         <p className="mt-3">
           <a
             href="#/checks"
-            className="font-serif text-[14px] text-signal underline underline-offset-4"
+            className="font-serif text-caption text-signal underline underline-offset-4"
           >
             Watch the checks reject a deliberately bad Brief →
           </a>
         </p>
 
         <div className="mt-6">
-          <h3 className="mb-2 font-serif text-[13px] font-semibold tracking-wide text-paper/50">
+          <h3 className="mb-2 font-serif text-caption font-semibold tracking-wide text-paper-mid">
             What the confidence marks mean
           </h3>
           <ConfidenceLegend />
@@ -308,14 +308,14 @@ export default function BriefView({ data }: { data: AnalysisResponse }) {
 
         {brief.falsifiers.length > 0 && (
           <div className="mt-6">
-            <h3 className="mb-2 font-serif text-[13px] font-semibold tracking-wide text-paper/50">
+            <h3 className="mb-2 font-serif text-caption font-semibold tracking-wide text-paper-mid">
               What would prove this wrong
             </h3>
             <ul className="space-y-2">
               {brief.falsifiers.map((f, i) => (
                 <li
                   key={i}
-                  className="border-l-2 border-falsify/60 pl-3 font-serif text-[15px] leading-relaxed text-paper/85"
+                  className="border-l-2 border-falsify/60 pl-3 font-serif text-body text-paper"
                 >
                   {f}
                 </li>
@@ -326,12 +326,12 @@ export default function BriefView({ data }: { data: AnalysisResponse }) {
 
         {brief.watchAtOpen.length > 0 && (
           <div className="mt-6">
-            <h3 className="mb-2 font-serif text-[13px] font-semibold tracking-wide text-paper/50">
+            <h3 className="mb-2 font-serif text-caption font-semibold tracking-wide text-paper-mid">
               Watch at the next US open
             </h3>
             <ul className="space-y-2">
               {brief.watchAtOpen.map((w, i) => (
-                <li key={i} className="font-serif text-[15px] leading-relaxed text-paper/85">
+                <li key={i} className="font-serif text-body text-paper">
                   {w}
                 </li>
               ))}
@@ -350,20 +350,20 @@ export default function BriefView({ data }: { data: AnalysisResponse }) {
           {brief.unknowns.map((u, i) => (
             <li key={i} className="flex flex-col gap-1">
               <Marker kind="unknown" />
-              <span className="font-serif text-[15px] leading-relaxed text-paper/75">{u}</span>
+              <span className="font-serif text-body text-paper-mid">{u}</span>
             </li>
           ))}
         </ul>
       </StageSection>
 
       <footer className="mt-11 border-t border-rule pt-4">
-        <p className="font-mono text-[10px] leading-relaxed text-paper/40">
+        <p className="font-mono text-micro text-paper-low">
           written {ago(data.generatedAt)} · {data.model} · {(data.latencyMs / 1000).toFixed(1)}s
           {data.captured ? ' · captured run, replayed' : ''}
           {data.fallbacksUsed.length > 0 &&
             ` · fell back from ${data.fallbacksUsed.map((f) => f.model).join(', ')}`}
         </p>
-        <p className="mt-3 font-serif text-[13px] leading-relaxed text-paper/45">
+        <p className="mt-3 font-serif text-caption text-paper-low">
           Analysis, not advice. Nightbrief places no orders, holds no exchange
           credentials, and does not tell you what to buy or sell. rTokens track
           the price of a US-listed stock; holding one is not the same as owning

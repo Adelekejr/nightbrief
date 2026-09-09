@@ -51,9 +51,9 @@ function WhyItMatters({ event }: { event: RankedEvent }) {
     <div className="mt-2.5 flex flex-col gap-1.5">
       {event.direct.map((d) => (
         <p key={`d-${d.symbol}`} className="flex flex-wrap items-baseline gap-x-2">
-          <Mono className="text-[12px] font-bold text-signal">{d.symbol}</Mono>
-          <Mono className="text-[10px] tracking-wide text-paper/40">fact</Mono>
-          <span className="font-serif text-[13px] text-paper/70">
+          <Mono className="text-caption font-bold text-signal">{d.symbol}</Mono>
+          <Mono className="text-micro tracking-wide text-paper-low">fact</Mono>
+          <span className="font-serif text-caption text-paper-mid">
             named in the {d.where === 'title' ? 'headline' : 'story'} as “{d.term}”
           </span>
         </p>
@@ -64,9 +64,9 @@ function WhyItMatters({ event }: { event: RankedEvent }) {
           key={`i-${i.symbol}`}
           className="flex flex-wrap items-baseline gap-x-2 border-l-2 border-inferred/30 pl-2"
         >
-          <Mono className="text-[12px] font-bold text-inferred">{i.symbol}</Mono>
-          <Mono className="text-[10px] tracking-wide text-inferred/70">inference</Mono>
-          <span className="font-serif text-[13px] text-inferred">{i.why}</span>
+          <Mono className="text-caption font-bold text-inferred">{i.symbol}</Mono>
+          <Mono className="text-micro tracking-wide text-inferred">inference</Mono>
+          <span className="font-serif text-caption text-inferred">{i.why}</span>
         </p>
       ))}
     </div>
@@ -90,7 +90,7 @@ export default function Overnight({
   return (
     <div>
       {/* The answer to "is there anything I need to know", before anything else. */}
-      <p className="font-serif text-[22px] leading-[1.35] text-paper">
+      <p className="font-serif text-page text-paper">
         {events.length === 0 ? (
           <>Nothing overnight reached your holdings.</>
         ) : (
@@ -103,7 +103,7 @@ export default function Overnight({
       </p>
 
       {events.length === 0 && (
-        <p className="mt-4 border-l-2 border-rule pl-3 font-serif text-[15px] leading-relaxed text-inferred">
+        <p className="mt-4 border-l-2 border-rule pl-3 font-serif text-body text-inferred">
           That is a finding, not a failure. {coverage.storiesConsidered} stories were
           checked against your positions in the last {data.windowHours} hours —
           from {coverage.liveSources.length} market sources
@@ -114,7 +114,7 @@ export default function Overnight({
       )}
 
       <p className="mt-3 flex flex-wrap items-baseline gap-x-3 gap-y-1">
-        <Mono className="text-[10px] text-paper/40">
+        <Mono className="text-micro text-paper-low">
           checked {ago(data.checkedAt)} · {coverage.storiesConsidered} stories ·{' '}
           {coverage.liveSources.length} market sources
           {coverage.tickerFeedsLive > 0 && ` + ${coverage.tickerFeedsLive} of your own tickers`} ·{' '}
@@ -122,7 +122,7 @@ export default function Overnight({
           {coverage.duplicatesRemoved > 0 && ` · ${coverage.duplicatesRemoved} duplicates merged`}
         </Mono>
         {triage.state !== 'ok' && (
-          <Mono className="text-[10px] text-falsify/80">
+          <Mono className="text-micro text-falsify/80">
             indirect-link pass unavailable{triage.detail ? ` (${triage.detail})` : ''} — showing
             named matches only
           </Mono>
@@ -136,22 +136,22 @@ export default function Overnight({
               <button
                 type="button"
                 onClick={() => onOpen(e)}
-                className="w-full border-t border-rule py-5 text-left hover:bg-paper/[0.02]"
+                className="w-full border-t border-rule py-5 text-left hover:border-rule-strong"
               >
                 <span className="flex flex-wrap items-baseline gap-x-2">
-                  <Mono className="text-[10px] text-paper/35">{String(i + 1).padStart(2, '0')}</Mono>
-                  <Mono className="text-[10px] text-paper/45">
+                  <Mono className="w-6 shrink-0 text-micro font-medium text-signal">
+                    {String(i + 1).padStart(2, '0')}
+                  </Mono>
+                  <Mono className="text-micro text-paper-low">
                     {e.publisher}
-                    {e.via && <span className="text-paper/25"> via {e.via}</span>}
+                    {e.via && <span className="text-paper-low"> via {e.via}</span>}
                   </Mono>
                   {e.session?.closed && (
-                    <Mono className="text-[10px] text-signal">market shut</Mono>
+                    <Mono className="text-micro text-signal">market shut</Mono>
                   )}
                 </span>
 
-                <span className="mt-1.5 block font-serif text-[17px] leading-snug text-paper">
-                  {e.title}
-                </span>
+                <span className="mt-2 block font-serif text-lede text-paper">{e.title}</span>
 
                 <WhyItMatters event={e} />
 
@@ -159,7 +159,7 @@ export default function Overnight({
                   <TimeStamp iso={e.publishedAt} session={e.session?.label} />
                 </span>
 
-                <span className="mt-2 block font-serif text-[13px] text-signal">
+                <span className="mt-3 inline-block border-b border-signal pb-px font-serif text-caption font-medium text-signal">
                   Open the Brief →
                 </span>
               </button>
@@ -174,17 +174,17 @@ export default function Overnight({
           {holdings.verified.map((h) => (
             <Mono
               key={h.symbol}
-              className={`rounded-[2px] border px-1.5 py-0.5 text-[11px] ${
+              className={`border px-1.5 py-0.5 text-micro ${
                 data.events.some((e) => e.symbols.includes(h.symbol))
                   ? 'border-signal/50 text-signal'
-                  : 'border-rule text-paper/40'
+                  : 'border-rule text-paper-low'
               }`}
             >
               {h.symbol}
             </Mono>
           ))}
         </p>
-        <p className="mt-2 font-serif text-[13px] text-paper/45">
+        <p className="mt-2 font-serif text-caption text-paper-low">
           Highlighted holdings were reached by at least one event. The rest were
           checked and not reached.
         </p>
@@ -196,14 +196,14 @@ export default function Overnight({
           <button
             type="button"
             onClick={onBrowse}
-            className="w-full rounded-[2px] border border-rule py-3 font-serif text-[15px] text-paper/70 hover:border-paper/30"
+            className="w-full border border-rule py-3 font-serif text-body text-paper-mid hover:border-paper/30"
           >
             Browse all stories
           </button>
           <button
             type="button"
             onClick={onEdit}
-            className="w-full rounded-[2px] border border-rule py-3 font-serif text-[15px] text-paper/70 hover:border-paper/30"
+            className="w-full border border-rule py-3 font-serif text-body text-paper-mid hover:border-paper/30"
           >
             Change holdings
           </button>

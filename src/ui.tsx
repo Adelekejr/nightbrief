@@ -16,44 +16,122 @@ export function Mono({ children, className = '' }: { children: ReactNode; classN
 /** Section heading. Sentence case — no all-caps eyebrow labels. */
 export function Heading({ children }: { children: ReactNode }) {
   return (
-    <h2 className="mb-3 font-serif text-[13px] font-semibold tracking-wide text-paper/50">
+    <h2 className="mb-3 font-serif text-caption font-semibold tracking-wide text-paper-mid">
       {children}
     </h2>
   )
 }
 
+/* ---- controls ---------------------------------------------------------
+ * Weight is the only tactility available without shadows, so the primary
+ * action takes a solid block of amber and the heaviest text on the page.
+ * Everything secondary is a rule and nothing more.
+ */
+
+type ButtonProps = {
+  children: ReactNode
+  onClick: () => void
+  disabled?: boolean
+  className?: string
+  'aria-label'?: string
+}
+
+export function PrimaryButton({ children, onClick, disabled, className = '' }: ButtonProps) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      disabled={disabled}
+      className={`w-full border border-signal bg-signal py-3.5 font-serif text-lede font-semibold text-signal-on
+        hover:bg-signal-deep hover:border-signal-deep
+        disabled:border-rule disabled:bg-transparent disabled:text-paper-low ${className}`}
+    >
+      {children}
+    </button>
+  )
+}
+
+export function SecondaryButton({ children, onClick, disabled, className = '' }: ButtonProps) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      disabled={disabled}
+      className={`w-full border border-rule-strong py-3 font-serif text-body text-paper
+        hover:border-paper-low disabled:border-rule disabled:text-paper-low ${className}`}
+    >
+      {children}
+    </button>
+  )
+}
+
+/**
+ * A selectable token. Selected inverts to a solid amber block — in print,
+ * inversion is what a pressed key looks like, and it needs no shadow to read
+ * as depressed.
+ */
+export function Chip({
+  label,
+  selected,
+  onClick,
+  title,
+}: {
+  label: string
+  selected: boolean
+  onClick: () => void
+  title?: string
+}) {
+  return (
+    <button
+      type="button"
+      aria-pressed={selected}
+      onClick={onClick}
+      title={title}
+      className={`border px-2.5 py-2 font-mono text-caption ${
+        selected
+          ? 'border-signal bg-signal font-medium text-signal-on'
+          : 'border-rule text-paper-mid hover:border-rule-strong hover:text-paper'
+      }`}
+    >
+      {label}
+    </button>
+  )
+}
+
+/* ---- marks ------------------------------------------------------------ */
+
 const CONFIDENCE_FILLED: Record<Confidence, number> = { high: 3, moderate: 2, low: 1 }
 
 /**
- * Confidence as a printed stamp, not a coloured pill. Three segments and the
- * word itself, so it survives being read in bad light on a phone.
+ * Confidence as a printed stamp, not a coloured pill. Three solid bars and the
+ * word itself, weighted to be legible at arm's length in bad light — the whole
+ * point is that it registers before the sentence next to it is read.
  */
 export function ConfidenceMark({ level }: { level: Confidence }) {
   const filled = CONFIDENCE_FILLED[level]
 
   return (
-    <span className="inline-flex shrink-0 items-center gap-1.5 align-middle">
+    <span className="inline-flex shrink-0 items-center gap-2 align-middle">
       <span aria-hidden className="inline-flex gap-[2px]">
         {[0, 1, 2].map((i) => (
           <span
             key={i}
-            className={`block h-[3px] w-[7px] ${i < filled ? 'bg-signal' : 'bg-paper/20'}`}
+            className={`block h-[5px] w-[11px] ${i < filled ? 'bg-signal' : 'bg-rule-strong'}`}
           />
         ))}
       </span>
-      <Mono className="text-[10px] tracking-wide text-paper/55">{level}</Mono>
+      <Mono className="text-micro font-medium tracking-wide text-paper-mid">{level}</Mono>
     </span>
   )
 }
 
-/**
- * Retrieved or inferred, stated in words. The surrounding type does the
- * heavier lifting; this removes any remaining doubt.
- */
+/** Retrieved or inferred, stated in words where the type register is not enough. */
 export function BasisMark({ basis }: { basis: Basis }) {
   return (
     <Mono
-      className={`text-[10px] tracking-wide ${basis === 'retrieved' ? 'text-paper/55' : 'text-inferred/80'}`}
+      className={`text-micro font-medium tracking-wide ${
+        basis === 'retrieved' ? 'text-paper-mid' : 'text-inferred'
+      }`}
     >
       {basis}
     </Mono>
@@ -68,16 +146,16 @@ const SENSITIVITY: Record<Sensitivity, { glyph: string; word: string }> = {
 
 /**
  * Deliberately not red and green. This tool never says buy or sell, so it does
- * not borrow the visual language of a trading terminal. What is described is
- * how a holding tends to respond — a sensitivity, not a recommendation.
+ * not borrow the visual language of a trading terminal. The glyph sits in a
+ * fixed-width slot so a column of exposures aligns on it.
  */
 export function SensitivityMark({ direction }: { direction: Sensitivity }) {
   const { glyph, word } = SENSITIVITY[direction] ?? SENSITIVITY.ambiguous
 
   return (
-    <span className="inline-flex items-baseline gap-1.5">
-      <Mono className="text-[13px] text-signal">{glyph}</Mono>
-      <span className="font-serif text-[13px] text-paper/70">{word}</span>
+    <span className="inline-flex items-baseline gap-2">
+      <Mono className="w-[0.9em] shrink-0 text-lede font-bold text-signal">{glyph}</Mono>
+      <span className="font-serif text-caption text-paper-mid">{word}</span>
     </span>
   )
 }
@@ -85,9 +163,7 @@ export function SensitivityMark({ direction }: { direction: Sensitivity }) {
 /** A source id, rendered as the machine reference it is. */
 export function SourceChip({ id, href }: { id: string; href?: string }) {
   const body = (
-    <Mono className="rounded-[2px] border border-rule px-1 py-px text-[10px] text-paper/60">
-      {id}
-    </Mono>
+    <Mono className="border border-rule-strong px-1.5 py-px text-micro text-paper-mid">{id}</Mono>
   )
   return href ? (
     <a href={href} target="_blank" rel="noreferrer noopener" className="hover:text-signal">
@@ -104,14 +180,14 @@ export function SourceChip({ id, href }: { id: string; href?: string }) {
  */
 export function SampleStamp({ label = 'Sample data' }: { label?: string }) {
   return (
-    <span className="inline-block -rotate-2 border border-signal/60 px-1.5 py-px align-middle">
-      <Mono className="text-[10px] font-bold tracking-wider text-signal">{label}</Mono>
+    <span className="inline-block -rotate-2 border-2 border-signal px-1.5 py-px align-middle">
+      <Mono className="text-micro font-bold tracking-wider text-signal">{label}</Mono>
     </span>
   )
 }
 
 export function TimeStamp({ iso, session }: { iso: string | null; session?: string | null }) {
-  if (!iso) return <Mono className="text-[11px] text-paper/40">time not stated</Mono>
+  if (!iso) return <Mono className="text-micro text-paper-low">time not stated</Mono>
 
   const d = new Date(iso)
   const text = Number.isNaN(d.getTime())
@@ -119,7 +195,7 @@ export function TimeStamp({ iso, session }: { iso: string | null; session?: stri
     : d.toLocaleString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })
 
   return (
-    <Mono className="text-[11px] text-paper/45">
+    <Mono className="text-micro text-paper-low">
       {text}
       {session ? ` · ${session}` : ''}
     </Mono>
