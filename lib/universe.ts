@@ -53,6 +53,8 @@ export type RToken = {
   sector: Sector
   /** What the company does. No figures, by design. */
   business: string
+  /** Other names a publisher might use. Matched case-sensitively. */
+  aliases?: string[]
   bitgetCategory?: string
   note?: string
 }
@@ -66,6 +68,7 @@ export const UNIVERSE: RToken[] = [
     sector: 'index-etf',
     business:
       'Tracks the S&P 500. Moves with the broad US market rather than any single company, so it responds to macro and policy news more than to company events.',
+    aliases: ['S&P 500', 'SPDR'],
   },
   {
     symbol: 'rQQQ',
@@ -75,6 +78,7 @@ export const UNIVERSE: RToken[] = [
     sector: 'index-etf',
     business:
       'Tracks the Nasdaq-100. Heavily weighted toward large technology companies, so it amplifies technology-sector news relative to a broad index.',
+    aliases: ['QQQ', 'Nasdaq-100', 'Nasdaq 100'],
   },
   {
     symbol: 'rNVDA',
@@ -84,6 +88,7 @@ export const UNIVERSE: RToken[] = [
     sector: 'semiconductors',
     business:
       'Designs GPUs and accelerators used for AI training and inference. Demand is tied to data-centre capital spending by cloud providers and AI labs.',
+    aliases: ['Nvidia', 'NVIDIA'],
     bitgetCategory: 'AI',
   },
   {
@@ -94,6 +99,7 @@ export const UNIVERSE: RToken[] = [
     sector: 'semiconductors',
     business:
       'Designs CPUs and GPUs for data centres, PCs and embedded systems. Competes directly with Nvidia in AI accelerators and with Intel in processors.',
+    aliases: ['AMD'],
     bitgetCategory: 'AI',
   },
   {
@@ -104,6 +110,7 @@ export const UNIVERSE: RToken[] = [
     sector: 'semiconductors',
     business:
       'Designs and manufactures processors, and operates its own fabrication plants. Exposed both to PC and server demand and to the economics of running foundries.',
+    aliases: ['Intel'],
   },
   {
     symbol: 'rAVGO',
@@ -113,6 +120,7 @@ export const UNIVERSE: RToken[] = [
     sector: 'semiconductors',
     business:
       'Supplies networking and custom silicon alongside infrastructure software. Custom AI accelerators for large cloud customers are a significant driver.',
+    aliases: ['Broadcom'],
     bitgetCategory: 'AI',
   },
   {
@@ -123,6 +131,7 @@ export const UNIVERSE: RToken[] = [
     sector: 'memory-and-storage',
     business:
       'Manufactures DRAM and NAND memory, including high-bandwidth memory used in AI accelerators. Highly cyclical: pricing swings with industry supply.',
+    aliases: ['Micron'],
     bitgetCategory: 'Storage & optical communications',
   },
   {
@@ -133,6 +142,7 @@ export const UNIVERSE: RToken[] = [
     sector: 'memory-and-storage',
     business:
       'Makes NAND flash memory and storage products. Shares the memory industry’s exposure to supply, pricing and capacity decisions.',
+    aliases: ['Sandisk', 'SanDisk'],
     bitgetCategory: 'Storage & optical communications',
   },
   {
@@ -143,6 +153,7 @@ export const UNIVERSE: RToken[] = [
     sector: 'memory-and-storage',
     business:
       'Makes hard disk drives, largely for data-centre mass storage. Demand tracks data-centre buildout rather than consumer PCs.',
+    aliases: ['Seagate'],
     bitgetCategory: 'Storage & optical communications',
   },
   {
@@ -153,6 +164,7 @@ export const UNIVERSE: RToken[] = [
     sector: 'optical-networking',
     business:
       'Supplies optical components and lasers used to move data inside and between data centres. Demand follows network capacity upgrades.',
+    aliases: ['Lumentum'],
     bitgetCategory: 'Storage & optical communications',
   },
   {
@@ -163,6 +175,7 @@ export const UNIVERSE: RToken[] = [
     sector: 'ai-cloud',
     business:
       'Rents GPU compute capacity for AI workloads. Revenue is concentrated in large AI customers and the business is capital-intensive.',
+    aliases: ['CoreWeave'],
     bitgetCategory: 'AI',
   },
   {
@@ -173,6 +186,7 @@ export const UNIVERSE: RToken[] = [
     sector: 'ai-cloud',
     business:
       'Operates AI-focused cloud infrastructure. Like other GPU cloud providers, its economics depend on securing accelerators and power.',
+    aliases: ['Nebius'],
     bitgetCategory: 'AI',
   },
   {
@@ -183,6 +197,7 @@ export const UNIVERSE: RToken[] = [
     sector: 'software-and-cloud',
     business:
       'Enterprise software and the Azure cloud platform. One of the largest buyers of AI data-centre capacity, which links it to the semiconductor chain.',
+    aliases: ['Microsoft'],
   },
   {
     symbol: 'rMETA',
@@ -192,6 +207,7 @@ export const UNIVERSE: RToken[] = [
     sector: 'internet-platform',
     business:
       'Social platforms funded by advertising, alongside heavy AI infrastructure spending. Advertising revenue is sensitive to the economic cycle.',
+    aliases: ['Meta Platforms', 'Facebook', 'Instagram'],
   },
   {
     symbol: 'rAAPL',
@@ -201,6 +217,7 @@ export const UNIVERSE: RToken[] = [
     sector: 'consumer-hardware',
     business:
       'Consumer hardware and services. Manufacturing is concentrated in Asia, which makes it sensitive to tariffs and supply-chain disruption.',
+    aliases: ['Apple', 'iPhone'],
   },
   {
     symbol: 'rTSLA',
@@ -210,6 +227,7 @@ export const UNIVERSE: RToken[] = [
     sector: 'automotive-and-energy',
     business:
       'Electric vehicles and energy storage. Exposed to consumer demand, interest rates, raw material costs and trade policy.',
+    aliases: ['Tesla'],
   },
   {
     symbol: 'rBE',
@@ -219,6 +237,7 @@ export const UNIVERSE: RToken[] = [
     sector: 'power-equipment',
     business:
       'Builds fuel-cell systems for on-site power generation, increasingly sold to data centres facing grid constraints.',
+    aliases: ['Bloom Energy'],
   },
   {
     symbol: 'rSPCX',
@@ -228,6 +247,7 @@ export const UNIVERSE: RToken[] = [
     sector: 'aerospace',
     business:
       'Launch services and satellite internet. Unlike the rest of this list it is not a publicly listed US company, so ordinary public-market disclosure does not apply.',
+    aliases: ['SpaceX', 'Starlink', 'Starship'],
     note: 'Privately held. Public reporting on it is thinner and less regular than for listed issuers, so treat claims about it with more caution.',
   },
 ]
