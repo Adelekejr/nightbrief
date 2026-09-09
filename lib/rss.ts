@@ -7,6 +7,8 @@ export type FeedItem = {
   id: string
   sourceId: string
   publisher: string
+  /** Named when the story reached us through an aggregator that did not write it. */
+  via?: string
   title: string
   link: string
   publishedAt: string | null
@@ -18,6 +20,8 @@ export type FeedItem = {
 export type SourceResult = {
   sourceId: string
   publisher: string
+  /** Named when the story reached us through an aggregator that did not write it. */
+  via?: string
   ok: boolean
   status: number | null
   ms: number

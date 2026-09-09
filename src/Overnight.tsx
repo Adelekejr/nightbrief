@@ -12,6 +12,7 @@ export type RankedEvent = {
   session: Session | null
   summary: string
   score: number
+  via?: string
   direct: Array<{ symbol: string; term: string; where: 'title' | 'summary'; broad: boolean }>
   inferred: Array<{ symbol: string; why: string }>
   symbols: string[]
@@ -30,6 +31,8 @@ export type OvernightResponse = {
   triage: { state: 'ok' | 'unavailable' | 'no-key'; model?: string; detail?: string }
   coverage: {
     storiesConsidered: number
+    tickerFeedsLive: number
+    duplicatesRemoved: number
     liveSources: Array<{ id: string; publisher: string }>
     unavailableSources: Array<{ id: string; publisher: string }>
   }
@@ -101,17 +104,22 @@ export default function Overnight({
 
       {events.length === 0 && (
         <p className="mt-4 border-l-2 border-rule pl-3 font-serif text-[15px] leading-relaxed text-inferred">
-          That is a finding, not a failure. {coverage.storiesConsidered} stories from{' '}
-          {coverage.liveSources.length} live sources were checked against your
-          positions in the last {data.windowHours} hours, and none of them
-          reached one.
+          That is a finding, not a failure. {coverage.storiesConsidered} stories were
+          checked against your positions in the last {data.windowHours} hours —
+          from {coverage.liveSources.length} market sources
+          {coverage.tickerFeedsLive > 0 &&
+            `, plus the news filed against ${coverage.tickerFeedsLive} of your own tickers`}
+          {' '}— and none of them reached one.
         </p>
       )}
 
       <p className="mt-3 flex flex-wrap items-baseline gap-x-3 gap-y-1">
         <Mono className="text-[10px] text-paper/40">
           checked {ago(data.checkedAt)} · {coverage.storiesConsidered} stories ·{' '}
-          {coverage.liveSources.length} live sources · {data.windowHours}h window
+          {coverage.liveSources.length} market sources
+          {coverage.tickerFeedsLive > 0 && ` + ${coverage.tickerFeedsLive} of your own tickers`} ·{' '}
+          {data.windowHours}h window
+          {coverage.duplicatesRemoved > 0 && ` · ${coverage.duplicatesRemoved} duplicates merged`}
         </Mono>
         {triage.state !== 'ok' && (
           <Mono className="text-[10px] text-falsify/80">
@@ -132,7 +140,10 @@ export default function Overnight({
               >
                 <span className="flex flex-wrap items-baseline gap-x-2">
                   <Mono className="text-[10px] text-paper/35">{String(i + 1).padStart(2, '0')}</Mono>
-                  <Mono className="text-[10px] text-paper/45">{e.publisher}</Mono>
+                  <Mono className="text-[10px] text-paper/45">
+                    {e.publisher}
+                    {e.via && <span className="text-paper/25"> via {e.via}</span>}
+                  </Mono>
                   {e.session?.closed && (
                     <Mono className="text-[10px] text-signal">market shut</Mono>
                   )}

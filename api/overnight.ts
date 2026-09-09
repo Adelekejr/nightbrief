@@ -4,11 +4,14 @@ import { fetchSource, type FeedItem } from '../lib/rss.js'
 import { sessionAt } from '../lib/market.js'
 import { resolve, type RToken } from '../lib/universe.js'
 import { rank } from '../lib/match.js'
+import { attribute, dedupe } from '../lib/dedupe.js'
 import { generateJson, hasKey } from '../lib/gemini.js'
 
 const TRIAGE_MODEL = 'gemini-3.5-flash-lite'
 const WINDOW_HOURS = 36
 const CANDIDATES = 40
+/** Per-holding feeds fan out to one host, so the count is capped. */
+const MAX_TICKER_FEEDS = 12
 
 const TRIAGE_SCHEMA = {
   type: 'OBJECT',
@@ -110,16 +113,39 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
 
   const feedsAt = Date.now()
-  const settled = await Promise.all(SOURCES.map((s) => fetchSource(s)))
+
+  // General feeds first: they carry a named publisher's own copy of a story,
+  // which should win over a syndicated one when both arrive.
+  const [general, perTicker] = await Promise.all([
+    Promise.all(SOURCES.map((s) => fetchSource(s))),
+    Promise.all(
+      held.slice(0, MAX_TICKER_FEEDS).map(async (t) => {
+        const { result, items } = await fetchSource(tickerFeed(t.underlying), 4000)
+        return {
+          result,
+          // Yahoo's ticker feeds mostly carry other people's journalism, so the
+          // publisher is taken from the link and the route named separately.
+          items: items.map((i) => ({ ...i, ...attribute(i.link, 'Yahoo Finance') })),
+        }
+      }),
+    ),
+  ])
+
+  const settled = [...general, ...perTicker]
   const feedsMs = Date.now() - feedsAt
-  const liveSources = settled.filter((s) => s.result.ok && s.result.itemCount > 0)
+  const tickerFeedsLive = perTicker.filter((s) => s.result.ok && s.result.itemCount > 0).length
+  const liveSources = general.filter((s) => s.result.ok && s.result.itemCount > 0)
   const cutoff = Date.now() - WINDOW_HOURS * 3_600_000
 
-  const recent: FeedItem[] = settled
+  const inWindow: FeedItem[] = settled
     .flatMap((s) => s.items)
     .filter((i) => i.publishedAt && new Date(i.publishedAt).getTime() >= cutoff)
     .sort((a, b) => (a.publishedAt! < b.publishedAt! ? 1 : -1))
-    .slice(0, CANDIDATES)
+
+  // The same story reaches the desk through a market feed and a ticker feed.
+  // Left alone it would be ranked twice and inflate whatever it touched.
+  const { kept, removed: duplicatesRemoved } = dedupe(inWindow)
+  const recent = kept.slice(0, CANDIDATES)
 
   // Model triage. Degraded rather than broken: if this fails, the deterministic
   // layer still stands on its own and the response says triage was unavailable.
@@ -196,8 +222,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     },
     coverage: {
       storiesConsidered: recent.length,
+      tickerFeedsLive,
+      duplicatesRemoved,
       liveSources: liveSources.map((s) => ({ id: s.result.sourceId, publisher: s.result.publisher })),
-      unavailableSources: settled
+      unavailableSources: general
         .filter((s) => !s.result.ok || s.result.itemCount === 0)
         .map((s) => ({ id: s.result.sourceId, publisher: s.result.publisher })),
     },
@@ -205,6 +233,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       id: e.item.id,
       title: e.item.title,
       publisher: e.item.publisher,
+      via: e.item.via,
       url: e.item.link,
       publishedAt: e.item.publishedAt,
       session: e.item.session,
