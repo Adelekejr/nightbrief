@@ -13,9 +13,14 @@ export const SAMPLE = ['rNVDA', 'rAMD', 'rINTC', 'rMU', 'rTSLA', 'rSPY']
 export default function PortfolioGate({
   initial,
   onReady,
+  onCancel,
+  editing = false,
 }: {
   initial: string[]
   onReady: (holdings: string[]) => void
+  onCancel?: () => void
+  /** Revisiting an existing portfolio rather than setting one for the first time. */
+  editing?: boolean
 }) {
   const [tokens, setTokens] = useState<Token[]>([])
   const [picked, setPicked] = useState<string[]>(initial)
@@ -34,14 +39,26 @@ export default function PortfolioGate({
   return (
     <div>
       <p className="font-serif text-[19px] leading-relaxed text-paper">
-        Tell Nightdesk what you hold. It will work out which of the events that
-        broke while New York was shut actually reach your positions.
+        {editing
+          ? 'Change what Nightdesk watches on your behalf. The overnight desk is rebuilt against whatever you leave selected.'
+          : 'Tell Nightdesk what you hold. It will work out which of the events that broke while New York was shut actually reach your positions.'}
       </p>
 
       <section className="mt-8">
-        <h2 className="mb-3 font-serif text-[13px] font-semibold tracking-wide text-paper/50">
-          Tokenized holdings
-        </h2>
+        <div className="mb-3 flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
+          <h2 className="font-serif text-[13px] font-semibold tracking-wide text-paper/50">
+            Your portfolio · {picked.length} selected
+          </h2>
+          {picked.length > 0 && (
+            <button
+              type="button"
+              onClick={() => setPicked([])}
+              className="font-serif text-[13px] text-paper/45 underline underline-offset-2 hover:text-signal"
+            >
+              Clear all
+            </button>
+          )}
+        </div>
 
         {failed ? (
           <p className="font-serif text-[15px] leading-relaxed text-inferred">
@@ -90,7 +107,9 @@ export default function PortfolioGate({
         >
           {picked.length === 0
             ? 'Pick at least one holding'
-            : `Check the overnight against ${picked.length} holding${picked.length > 1 ? 's' : ''}`}
+            : editing
+              ? `Rebuild the desk against ${picked.length} holding${picked.length > 1 ? 's' : ''}`
+              : `Check the overnight against ${picked.length} holding${picked.length > 1 ? 's' : ''}`}
         </button>
 
         <button
@@ -100,6 +119,16 @@ export default function PortfolioGate({
         >
           Use the sample portfolio
         </button>
+
+        {onCancel && (
+          <button
+            type="button"
+            onClick={onCancel}
+            className="w-full py-2 font-serif text-[14px] text-paper/45 hover:text-paper/70"
+          >
+            Leave it as it was
+          </button>
+        )}
       </div>
     </div>
   )

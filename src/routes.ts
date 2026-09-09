@@ -7,6 +7,9 @@ import { useEffect, useState } from 'react'
  */
 export type Route =
   | { name: 'gate' }
+  /** The holdings editor, reachable at any time. Distinct from the first-run
+   *  gate precisely so it can never be redirected away from. */
+  | { name: 'holdings' }
   | { name: 'overnight' }
   | { name: 'brief' }
   | { name: 'browse' }
@@ -15,6 +18,7 @@ export type Route =
 const ROUTES: Record<string, Route['name']> = {
   '': 'gate',
   '/': 'gate',
+  '/holdings': 'holdings',
   '/overnight': 'overnight',
   '/brief': 'brief',
   '/browse': 'browse',
