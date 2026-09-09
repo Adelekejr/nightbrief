@@ -27,7 +27,7 @@ export type PriceLookup =
   | { ok: true; close: Close }
   | { ok: false; ticker: string; reason: string; sample?: string }
 
-const UA = 'Nightbrief/0.1 (research prototype; https://github.com/Adelekejr/nightdesk)'
+const UA = 'Nightbrief/0.1 (research prototype; https://github.com/Adelekejr/nightbrief)'
 
 /**
  * Candidate providers, tried in order. Which of these will serve a request
