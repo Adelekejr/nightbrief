@@ -223,8 +223,13 @@ export default function App() {
     </>
   )
 
+  // Discovery wants width; a finished Brief wants a reading measure.
+  const reading = route.name === 'brief' || route.name === 'example'
+
   return (
-    <div className="mx-auto min-h-dvh w-full max-w-[38rem] px-5 py-10">
+    <div
+      className={`mx-auto min-h-dvh w-full px-5 py-10 ${reading ? 'max-w-[34rem]' : 'max-w-[38rem]'}`}
+    >
       <div ref={top} />
       <Masthead session={session} onHome={() => navigate(holdings.length ? 'overnight' : 'gate')} />
 
