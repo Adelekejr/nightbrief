@@ -19,7 +19,10 @@ export default function TopBar({
   onHome: () => void
   onEditHoldings: () => void
   editing: boolean
-  /** Already on the desk, so the wordmark has nowhere to take you. */
+  /** Only decides whether to show the back mark — never whether the
+   *  wordmark works. A masthead that is dead on the screen a reader spends
+   *  most of their time on is worse than one that occasionally just returns
+   *  them to the top. */
   atHome: boolean
 }) {
   return (
@@ -28,13 +31,11 @@ export default function TopBar({
         <button
           type="button"
           onClick={onHome}
-          disabled={atHome}
-          aria-label={atHome ? 'Nightbrief' : 'Back to the overnight desk'}
-          className="group flex items-baseline gap-1.5 font-serif text-lede font-semibold tracking-tight text-paper disabled:cursor-default enabled:hover:text-signal"
+          aria-label={atHome ? 'Back to the top' : 'Back to the overnight desk'}
+          className="flex items-baseline gap-1.5 font-serif text-lede font-semibold tracking-tight text-paper hover:text-signal"
         >
-          {/* A wordmark that is also a control has to admit it. The mark only
-              appears when there is somewhere to go, so tapping it on the desk
-              is never a dead action. */}
+          {/* The mark appears when the wordmark leaves the current screen. On
+              the desk it stays put and the wordmark returns you to the top. */}
           {!atHome && <span className="font-mono text-caption font-normal text-signal">‹</span>}
           Nightbrief
         </button>

@@ -245,7 +245,10 @@ export default function App() {
       <TopBar
         count={holdings.length}
         editing={editing}
-        onHome={() => navigate(holdings.length ? "overnight" : "gate")}
+        onHome={() => {
+          navigate(holdings.length ? "overnight" : "gate");
+          window.scrollTo({ top: 0 });
+        }}
         onEditHoldings={() => navigate("holdings")}
         atHome={route.name === (holdings.length ? "overnight" : "gate")}
       />
