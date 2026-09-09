@@ -2,8 +2,8 @@ import type { VercelRequest, VercelResponse } from '@vercel/node'
 import { SOURCES, tickerFeed } from '../lib/sources.js'
 import { fetchSource, type FeedItem } from '../lib/rss.js'
 import { sessionAt } from '../lib/market.js'
-import { resolve, type RToken } from '../lib/universe.js'
-import { rank } from '../lib/match.js'
+import { resolve, UNIVERSE, type RToken } from '../lib/universe.js'
+import { directMatches, rank } from '../lib/match.js'
 import { attribute, dedupe } from '../lib/dedupe.js'
 import { generateJson, hasKey } from '../lib/gemini.js'
 
@@ -83,6 +83,39 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       ok: false,
       reason: 'Name at least one holding from the verified rToken listing.',
       unverified,
+    })
+    return
+  }
+
+  // Recall check. A ticker's own feed is, by construction, news about that
+  // company — so running the name matcher over it measures what fraction of
+  // stories about a holding we actually recognise. Misses are the point of
+  // the output: they name the spellings the alias list lacks. Some misses are
+  // correct (a sector story in a ticker's feed need not name the company), so
+  // the titles are reported for reading rather than reduced to a score.
+  if (req.query.recall === '1') {
+    const targets = UNIVERSE
+    const rows = await Promise.all(
+      targets.map(async (token) => {
+        const { result, items } = await fetchSource(tickerFeed(token.underlying), 6000)
+        const matched = items.filter((i) => directMatches(i, [token]).length > 0)
+        const missed = items.filter((i) => directMatches(i, [token]).length === 0)
+
+        return {
+          symbol: token.symbol,
+          ok: result.ok,
+          items: items.length,
+          matched: matched.length,
+          missedTitles: missed.slice(0, 6).map((i) => i.title.slice(0, 110)),
+        }
+      }),
+    )
+
+    res.setHeader('cache-control', 'no-store')
+    res.status(200).json({
+      probedAt: new Date().toISOString(),
+      note: 'A ticker feed carries sector stories too, so perfect recall is neither expected nor desirable. Read the missed titles for names the matcher should have caught.',
+      rows: rows.sort((a, b) => a.matched / (a.items || 1) - b.matched / (b.items || 1)),
     })
     return
   }
