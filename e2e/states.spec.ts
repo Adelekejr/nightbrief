@@ -181,7 +181,10 @@ test.describe('long content', () => {
   test('a very long headline does not push the page sideways', async ({ page }) => {
     await seeded(page, { '**/api/overnight*': longEvent })
     await page.goto('#/overnight')
-    await expect(page.getByText(/Semiconductor Manufacturing Equipment/)).toBeVisible()
+    // The headline now appears twice — once on the breaking card and once
+    // in the list beneath it. Both have to hold the measure, and the
+    // overflow assertion below is measured on the whole document anyway.
+    await expect(page.getByText(/Semiconductor Manufacturing Equipment/).first()).toBeVisible()
 
     const overflow = await page.evaluate(
       () => document.documentElement.scrollWidth - document.documentElement.clientWidth,

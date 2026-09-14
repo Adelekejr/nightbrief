@@ -1,7 +1,9 @@
 import { useCallback, useEffect, useRef, useState } from "react";
+import BreakingNews from "./BreakingNews";
 import BriefView from "./Brief";
 import Browse, { type BriefRequest } from "./Browse";
 import Checks from "./Checks";
+import { selectBreakingNews } from "./breaking";
 import Validation from "./Validation";
 import Overnight, {
   type OvernightResponse,
@@ -131,6 +133,20 @@ export default function App() {
       }
     },
     [holdings],
+  );
+
+  /** One path from a ranked event to its Brief, shared by the story list and
+   *  the breaking card, so the two cannot drift onto different articles. */
+  const openBriefFor = useCallback(
+    (e: RankedEvent) =>
+      runBrief({
+        title: e.title,
+        text: e.summary || e.title,
+        publisher: e.publisher,
+        url: e.url,
+        publishedAt: e.publishedAt ?? undefined,
+      }),
+    [runBrief],
   );
 
   const loadExample = useCallback(() => {
@@ -313,6 +329,30 @@ export default function App() {
 
           {route.name === "overnight" && (
             <>
+              {/* Directly below the masthead, above the story list. It follows
+                  the desk's own three states: the desk is what is being
+                  scanned, so the card cannot claim to know more than it. */}
+              {overnight.at === "loading" && <BreakingNews state="loading" />}
+              {overnight.at === "failed" && (
+                <BreakingNews
+                  state="failed"
+                  onRetry={() => fetchOvernight(holdings)}
+                />
+              )}
+              {overnight.at === "ready" && (
+                <BreakingNews
+                  state="ready"
+                  pick={selectBreakingNews(
+                    overnight.data.events,
+                    overnight.data.holdings.verified,
+                  )}
+                  checkedAt={overnight.data.checkedAt}
+                  windowHours={overnight.data.windowHours}
+                  onOpenBrief={openBriefFor}
+                  onRescan={() => fetchOvernight(holdings)}
+                />
+              )}
+
               {overnight.at === "loading" && (
                 <Working
                   since={overnight.since}
@@ -329,15 +369,7 @@ export default function App() {
                   data={overnight.data}
                   restoredHoldings={restored ? holdings : null}
                   onDismissRestored={() => setRestored(false)}
-                  onOpen={(e: RankedEvent) =>
-                    runBrief({
-                      title: e.title,
-                      text: e.summary || e.title,
-                      publisher: e.publisher,
-                      url: e.url,
-                      publishedAt: e.publishedAt ?? undefined,
-                    })
-                  }
+                  onOpen={openBriefFor}
                   onBrowse={() => navigate("browse")}
                   onEdit={() => navigate("holdings")}
                   onExample={openExample}
