@@ -133,6 +133,52 @@ test('the landing screen reads at AA', async ({ page }) => {
   expect(bad, `unreadable text on the landing screen:\n${report(bad)}`).toEqual([])
 })
 
+/**
+ * The muted tiers are held above AAA, not AA.
+ *
+ * AA is where text stops failing, not where it becomes comfortable, and this
+ * is read on a phone at 1am. The sweep above enforces the floor; this enforces
+ * the bar the three muted inks were actually chosen against, so a later tweak
+ * to one of them cannot quietly drop back to "passes AA".
+ */
+const MUTED: Record<string, string> = {
+  'rgb(192, 185, 173)': 'paper-mid',
+  'rgb(168, 159, 147)': 'paper-low',
+  'rgb(148, 169, 185)': 'inferred',
+}
+
+for (const [name, hash] of [
+  ['the landing screen', '#/'],
+  ['the overnight desk', '#/overnight'],
+  ['the worked example', '#/example'],
+  ['the validation report', '#/validation'],
+  ['the checks page', '#/checks'],
+] as const) {
+  test(`${name} holds the muted inks above 7:1`, async ({ page }) => {
+    await stubApi(page)
+    if (hash !== '#/') {
+      await page.addInitScript(
+        ([k, v]) => window.localStorage.setItem(k as string, v as string),
+        [KEY, JSON.stringify(['rNVDA', 'rINTC'])],
+      )
+    }
+    await page.goto(hash)
+    await page.waitForTimeout(600)
+
+    const all = (await page.evaluate(audit)) as Offender[]
+    const dim = all.filter((r) => MUTED[r.fg] && r.ratio < 7)
+    expect(
+      dim,
+      `muted ink below 7:1 on ${name}:\n${dim.map((r) => `  ${MUTED[r.fg]} ${r.ratio}:1 — "${r.text}"`).join('\n')}`,
+    ).toEqual([])
+
+    // And the tiers stay distinguishable from each other. Lifting the quietest
+    // to 7:1 on its own would have collapsed it into the tier above.
+    const seen = new Set(all.map((r) => MUTED[r.fg]).filter(Boolean))
+    expect(seen.size, `only ${[...seen]} in use`).toBeGreaterThan(1)
+  })
+}
+
 test('the selected state is legible, not a tint', async ({ page }) => {
   await stubApi(page)
   await page.goto('#/')
