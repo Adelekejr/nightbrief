@@ -79,7 +79,11 @@ export const DIRECTION: Record<
   'sensitive-positive': { word: 'sensitive, upward', tone: 'rise' },
   'sensitive-negative': { word: 'sensitive, downward', tone: 'fall' },
   ambiguous: { word: 'cuts both ways', tone: 'neutral' },
-  unclear: { word: 'unclear', tone: 'neutral' },
+  // Display copy only — the value stays `unclear`, and the selector and its
+  // tests still read it as that. "unclear" described the desk's knowledge but
+  // left a reader with nowhere to go; this says where the answer is settled,
+  // which is the more useful half of the same fact.
+  unclear: { word: 'settled in the Brief', tone: 'neutral' },
 }
 
 /**

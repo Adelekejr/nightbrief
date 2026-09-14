@@ -158,18 +158,19 @@ export default function BreakingNews(props: Props) {
     <Card tone={tone}>
       <Label trailing={`last checked ${ago(checkedAt)}`} />
 
-      {/* Whose question this answers. Without it the card reads as being
-          about the reader's positions, which on the landing screen they have
-          not named — the one thing this mode must never imply. */}
+      <h2 className="mt-2 font-serif text-display text-paper break-words">{event.title}</h2>
+
+      {/* Whose question this answers. Under the headline rather than above it:
+          the story is what a reader came for, and the caveat is what qualifies
+          it — but it still has to be read before the ticker below, because on
+          the landing screen these are not the reader's positions. */}
       {listing && (
-        <p className="mt-1 font-serif text-caption text-paper-mid">
+        <p className="mt-1.5 font-serif text-caption text-paper-mid">
           The top story across the whole verified rToken listing — not your
           portfolio, which you have not named yet. Name it below and the desk
           ranks everything against it instead.
         </p>
       )}
-
-      <h2 className="mt-2 font-serif text-display text-paper break-words">{event.title}</h2>
 
       {/* Which holding, and why — in the same two registers the story rows
           use, so the card needs no legend of its own. */}
@@ -214,10 +215,12 @@ export default function BreakingNews(props: Props) {
         </span>
       </p>
 
+      {/* Where the answer lives is now carried by the direction value itself,
+          so this is left saying only the part that value cannot: why there is
+          no answer here. */}
       {direction === 'unclear' && (
         <p className="mt-1.5 font-serif text-caption text-paper-mid">
-          Which way this cuts is settled in the Brief, against the article
-          itself. The desk does not guess it from a headline.
+          The desk does not guess direction from a headline.
         </p>
       )}
 
@@ -237,11 +240,17 @@ export default function BreakingNews(props: Props) {
         >
           Open the full Brief →
         </button>
+        {/* A rule at `rule-strong` measures 1.83:1 on the stock — under the
+            3:1 WCAG asks of a control's boundary, and it read as a disabled
+            control sitting beside the amber one. The border carries the whole
+            shape here, since there is no fill, so it is the part that had to
+            move; the label was already at 14.9:1 and only wanted the weight
+            to match the primary's. */}
         <a
           href={event.url}
           target="_blank"
           rel="noreferrer noopener"
-          className="border border-rule-strong px-3 py-2 font-serif text-caption text-paper hover:border-paper-low"
+          className="border border-paper-low px-3 py-2 font-serif text-caption font-medium text-paper hover:border-paper-mid"
         >
           Read the source ↗
         </a>
