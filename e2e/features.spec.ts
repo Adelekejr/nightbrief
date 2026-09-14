@@ -74,7 +74,10 @@ test.describe('the prompt entry', () => {
     // filter should keep it.
     await page.getByRole('button', { name: 'What affects my semiconductor holdings?' }).click()
     await expect(page.getByText(/Showing semiconductors only/)).toBeVisible()
-    await expect(page.getByText(OVERNIGHT.events[0].title)).toBeVisible()
+    // Twice now: the breaking card carries the top event's headline as well
+    // as the list. The card is portfolio-wide and deliberately ignores the
+    // filter, exactly as the top-story shortcut does.
+    await expect(page.getByText(OVERNIGHT.events[0].title).first()).toBeVisible()
 
     await page.getByRole('button', { name: 'Clear filter' }).click()
     await expect(page.getByText(/Showing semiconductors only/)).toHaveCount(0)
