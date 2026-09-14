@@ -34,8 +34,21 @@ export const OVERNIGHT = {
     storiesConsidered: 40,
     tickerFeedsLive: 2,
     duplicatesRemoved: 4,
-    liveSources: [{ id: 'cnbc-top', publisher: 'CNBC' }],
-    unavailableSources: [],
+    // Eight of nine answering, which is what the deployed feed actually does
+    // and what /api/feed?probe=1 reports. The stub used to carry a single
+    // source, so every count in the coverage line rendered as "1" and its
+    // hardcoded plurals were never once seen against a real number.
+    liveSources: [
+      { id: 'fed-press', publisher: 'Federal Reserve' },
+      { id: 'bea-news', publisher: 'Bureau of Economic Analysis' },
+      { id: 'cnbc-top', publisher: 'CNBC' },
+      { id: 'cnbc-markets', publisher: 'CNBC Markets' },
+      { id: 'marketwatch', publisher: 'MarketWatch' },
+      { id: 'yahoo-finance', publisher: 'Yahoo Finance' },
+      { id: 'ecb-press', publisher: 'European Central Bank' },
+      { id: 'sec-news', publisher: 'SEC' },
+    ],
+    unavailableSources: [{ id: 'bls-news', publisher: 'US Bureau of Labor Statistics' }],
   },
   events: [
     {

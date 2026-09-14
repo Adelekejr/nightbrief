@@ -40,6 +40,9 @@ test.describe('empty states', () => {
     await expect(page.getByText(/That is a finding, not a failure/)).toBeVisible()
     // What was searched has to be visible, or "nothing" is unreadable.
     await expect(page.getByText(/40 stories/).first()).toBeVisible()
+    // And it has to be the work this scan actually did. The stub answers with
+    // eight live sources; a line saying one would be understating it.
+    await expect(page.getByText(/8 market sources/).first()).toBeVisible()
   })
 
   test('a feed with no stories says so', async ({ page }) => {
@@ -63,6 +66,35 @@ test.describe('empty states', () => {
     await expect(page.getByText(/no closing prices/i)).toBeVisible()
   })
 })
+
+/**
+ * The desk's own numbers, checked against the response that produced them.
+ * The count and the sentence have to move together, or the line is describing
+ * some other scan than the one it sits under.
+ *
+ * A test each rather than a loop: the routes are stubbed per page, and a hash
+ * change on an already-loaded document does not re-fetch, so a loop would have
+ * measured the first stub three times over.
+ */
+for (const live of [1, 3, 8]) {
+  test(`the coverage line reports ${live} when ${live} answered`, async ({ page }) => {
+    await seeded(page, {
+      '**/api/overnight*': {
+        ...OVERNIGHT,
+        coverage: {
+          ...OVERNIGHT.coverage,
+          liveSources: OVERNIGHT.coverage.liveSources.slice(0, live),
+        },
+      },
+    })
+    await page.goto('#/overnight')
+
+    const expected = `${live} market source${live === 1 ? '' : 's'}`
+    await expect(page.getByText(new RegExp(expected)).first()).toBeVisible()
+    // The hardcoded plural this replaced, in the shape it used to take.
+    expect(await page.locator('main').innerText()).not.toContain('1 market sources')
+  })
+}
 
 test.describe('source failures', () => {
   const failing = (pattern: string) => ({ [pattern]: null })
