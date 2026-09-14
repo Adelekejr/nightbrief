@@ -39,6 +39,42 @@ async function settled(page: import('@playwright/test').Page, text: string | Reg
   await expect(card(page)).toContainText(text, { timeout: 15_000 })
 }
 
+/**
+ * WCAG 1.4.11: a control's boundary has to hold 3:1 against what is behind
+ * it. The contrast sweep measures text only, so a button carrying its whole
+ * shape in a rule — which is every secondary control here, there being no
+ * fills outside the amber — was never being checked at all.
+ */
+const borderContrast = (locator: ReturnType<typeof card>) =>
+  locator.evaluate((el) => {
+    const parse = (c: string) => {
+      const m = c.match(/rgba?\(([^)]+)\)/)
+      if (!m) return null
+      const [r, g, b, a = '1'] = m[1].split(/[,\s/]+/).filter(Boolean)
+      return [+r, +g, +b, +a] as const
+    }
+    const backdrop = (node: Element): number[] => {
+      for (let n: Element | null = node; n; n = n.parentElement) {
+        const c = parse(getComputedStyle(n).backgroundColor)
+        if (c && c[3] === 1) return [c[0], c[1], c[2]]
+      }
+      return [0, 0, 0]
+    }
+    const lum = ([r, g, b]: number[]) => {
+      const f = (v: number) => {
+        v /= 255
+        return v <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4
+      }
+      return 0.2126 * f(r) + 0.7152 * f(g) + 0.0722 * f(b)
+    }
+    const edge = parse(getComputedStyle(el).borderTopColor)
+    if (!edge) return 0
+    const bg = backdrop(el)
+    const on = edge[3] === 1 ? [edge[0], edge[1], edge[2]] : [edge[0], edge[1], edge[2]].map((v, i) => v * edge[3] + bg[i] * (1 - edge[3]))
+    const [hi, lo] = [lum(on), lum(bg)].sort((a, b) => b - a)
+    return +((hi + 0.05) / (lo + 0.05)).toFixed(2)
+  })
+
 test.describe('the card', () => {
   test('carries every field, read from the event', async ({ page }) => {
     await seeded(page)
@@ -78,9 +114,14 @@ test.describe('the card', () => {
     await settled(page, EVENT.title)
 
     // The desk runs before any model reads the article, so it has no
-    // direction to report and says so rather than reading one off a headline.
-    await expect(card(page)).toContainText('unclear')
-    await expect(card(page)).toContainText(/settled in the Brief/)
+    // direction to report. The displayed value says where the answer is
+    // settled instead; the value behind it is still `unclear`, which is what
+    // the selector's own tests assert.
+    await expect(card(page)).toContainText('direction')
+    await expect(card(page)).toContainText('settled in the Brief')
+    await expect(card(page)).toContainText('The desk does not guess direction from a headline.')
+    // The bare word it used to print told a reader nothing they could act on.
+    expect(await card(page).innerText()).not.toContain('unclear')
 
     // Whatever the direction, the rail is never the only thing carrying it.
     const rail = await card(page).evaluate((el) => getComputedStyle(el).borderLeftColor)
@@ -158,6 +199,27 @@ test.describe('the card', () => {
     await expect(card(page)).toContainText('inference')
     await expect(card(page)).toContainText('buys advanced packaging from that foundry')
     await expect(card(page)).toContainText('rNVDA')
+  })
+
+  test('the source button reads as a control, not a disabled one', async ({ page }) => {
+    await seeded(page)
+    await page.goto('#/overnight')
+    await settled(page, EVENT.title)
+    await page.mouse.move(0, 0) // measure the resting state, not a hover
+
+    const source = card(page).getByRole('link', { name: /read the source/i })
+    const ratio = await borderContrast(source)
+    expect(ratio, `the source button's border is ${ratio}:1`).toBeGreaterThanOrEqual(3)
+
+    // And it still reads as the secondary of the pair: the amber one is the
+    // only one carrying a fill.
+    const fills = await card(page).evaluate((el) =>
+      [...el.querySelectorAll('button, a[href]')].map(
+        (n) => getComputedStyle(n).backgroundColor,
+      ),
+    )
+    const filled = fills.filter((c) => c !== 'rgba(0, 0, 0, 0)' && c !== 'transparent')
+    expect(filled, 'exactly one action should carry a fill').toHaveLength(1)
   })
 })
 
@@ -342,6 +404,31 @@ test.describe('on the landing screen', () => {
     expect(cardTop, 'the card is below the picker').toBeLessThan(pickerTop)
   })
 
+  test('leads with the headline, and puts the caveat under it', async ({ page }) => {
+    await cold(page)
+    await page.goto('#/')
+    await settled(page, LEAD.title)
+
+    const headline = card(page).getByRole('heading', { name: LEAD.title })
+    const caveat = card(page).getByText(/across the whole verified rToken listing/i)
+
+    const headlineTop = (await headline.boundingBox())!.y
+    const caveatTop = (await caveat.boundingBox())!.y
+    expect(caveatTop, 'the caveat is still above the headline').toBeGreaterThan(headlineTop)
+
+    // Secondary register: smaller than the headline, and the quieter ink.
+    const type = await caveat.evaluate((el) => {
+      const s = getComputedStyle(el)
+      return { px: parseFloat(s.fontSize), colour: s.color }
+    })
+    expect(type.px).toBeLessThanOrEqual(14)
+    expect(type.colour).toBe('rgb(167, 157, 141)') // --color-paper-mid
+
+    // And it still comes before the ticker, which is what it qualifies.
+    const tickerTop = (await card(page).getByText('rNVDA').first().boundingBox())!.y
+    expect(caveatTop).toBeLessThan(tickerTop)
+  })
+
   test('names one holding and counts the rest, never a row of tickers', async ({ page }) => {
     await cold(page)
     await page.goto('#/')
@@ -389,10 +476,10 @@ test.describe('on the landing screen', () => {
     expect(text).toMatch(/Nothing here updates on its own/)
     expect(text).not.toMatch(/\bLIVE\b/)
 
-    // Same rail as the portfolio card: direction is unclear here too.
+    // Same rail and the same direction copy as the portfolio card.
     const rail = await card(page).evaluate((el) => getComputedStyle(el).borderLeftColor)
     expect(rail).not.toMatch(/217,\s*97,\s*76/)
-    await expect(card(page)).toContainText('unclear')
+    await expect(card(page)).toContainText('settled in the Brief')
   })
 
   test('the three states hold here too', async ({ page }) => {
