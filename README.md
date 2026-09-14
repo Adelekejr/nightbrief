@@ -114,7 +114,9 @@ are named in `src/breaking.ts`.
 for a holding is decided in the Brief, against the article. Nothing on the desk
 carries it, and reading a direction off a headline would be exactly the
 fabrication the validator exists to catch, arriving by a route with no
-validator on it. The card states `unclear` and points at the Brief.
+validator on it. The value behind the card stays `unclear`; what it prints
+is "settled in the Brief", which is the same fact told as somewhere to go
+rather than as a shrug.
 
 Three states, each stating plainly what is true. Scanning names what is being
 read. Nothing matched is a finding, with the scan offered again. A failed check
@@ -407,11 +409,11 @@ never implies an understanding that is not there.
 ```
 npm test           # 84 unit tests — the validator, matcher, selector, universe, routing
 npm run typecheck
-npm run build && npm run test:browser   # 79 checks × 2 device profiles = 158 runs
+npm run build && npm run test:browser   # 81 checks × 2 device profiles = 162 runs
 ```
 
-**Counting them honestly:** 79 distinct browser checks, each run twice — once
-on a Pixel 7 profile and once on desktop — for 158 runs in total. Of those, 155
+**Counting them honestly:** 81 distinct browser checks, each run twice — once
+on a Pixel 7 profile and once on desktop — for 162 runs in total. Of those, 159
 execute and pass and 3 are skipped by design, being phone-only checks (thumb
 target size, sideways scroll, masthead reach) that do not apply to the desktop
 profile. Zero failures.
@@ -440,20 +442,25 @@ and navigation clears 40px, and no screen scrolls sideways on a phone), and
 **degraded states** — every source failing one at a time, empty results, a
 slow answer, and content longer than the column it sits in.
 
-The breaking card has twenty-four of its own, because most of what it promises
+The breaking card has twenty-six of its own, because most of what it promises
 is about what it refuses to print: that a failed check shows no event rather
 than an older one, that no wording implies a watch is running, that the
-direction it was never given stays unclear, and that its entrance is opacity
+direction it was never given is never guessed, and that its entrance is opacity
 and position only — checked against the keyframes themselves rather than the
 class name — and nothing at all when the reader has declined motion. Its layout
 is measured at 360px and 390px as well as on both device profiles.
 
-Ten of those are the landing mode, which has more to refuse than the portfolio
+Eleven of those are the landing mode, which has more to refuse than the portfolio
 one: that it never prints a second ticker, never prints an inference, never
 reads as being about a portfolio the reader has not named, and hands over to
 the portfolio card the moment one exists. The landing screen is also the one
 route the contrast sweep used to miss — every other check seeds a portfolio,
 which makes `#/` forward to the desk before anything can be measured.
+
+The sweep measures text only, so a control carrying its whole shape in a rule
+was never checked at all: the card's source button sat at 1.83:1, under the
+3:1 WCAG asks of a boundary, and read as disabled beside the amber primary.
+Its border is measured now, against what is actually composited behind it.
 
 Four defects were found and fixed the first time they ran:
 
