@@ -1,3 +1,4 @@
+import Mark from './Mark'
 import { Mono } from './ui'
 
 /**
@@ -40,6 +41,7 @@ export default function TopBar({
           {/* The mark appears when the wordmark leaves the current screen. On
               the desk it stays put and the wordmark returns you to the top. */}
           {!atHome && <span className="font-mono text-caption font-normal text-signal">‹</span>}
+          <Mark />
           Nightbrief
         </button>
 

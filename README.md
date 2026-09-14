@@ -173,7 +173,7 @@ is not one that only a ticker feed carried.
 | News feed | live, 8 of 9 sources answering, plus per-holding feeds |
 | rToken universe | 18 pairs, observed and dated |
 | Worked example | captured, served instantly |
-| Tests | 93, no test framework — Node's runner and type stripping |
+| Tests | 96, no test framework — Node's runner and type stripping |
 | Prices | live — closing price of the underlying share, dated |
 
 **What is real on screen.** Headlines, publishers, timestamps, links and
@@ -407,16 +407,16 @@ never implies an understanding that is not there.
 ## Tests
 
 ```
-npm test           # 93 unit tests — the validator, matcher, selector, coverage, universe, routing
+npm test           # 96 unit tests — the validator, matcher, selector, coverage, mark, universe, routing
 npm run typecheck
-npm run build && npm run test:browser   # 89 checks × 2 device profiles = 178 runs
+npm run build && npm run test:browser   # 99 checks × 2 device profiles = 198 runs
 ```
 
-**Counting them honestly:** 89 distinct browser checks, each run twice — once
-on a Pixel 7 profile and once on desktop — for 178 runs in total. Of those, 175
-execute and pass and 3 are skipped by design, being phone-only checks (thumb
-target size, sideways scroll, masthead reach) that do not apply to the desktop
-profile. Zero failures.
+**Counting them honestly:** 99 distinct browser checks, each run twice — once
+on a Pixel 7 profile and once on desktop — for 198 runs in total. Of those, 194
+execute and pass and 4 are skipped by design, being phone-only checks (thumb
+target size, sideways scroll, masthead reach, the mark's effect on it) that do
+not apply to the desktop profile. Zero failures.
 
 The browser checks exist because every defect a reader has had to report on
 this project was invisible to the type checker and to the unit tests: a
@@ -474,6 +474,28 @@ Four defects were found and fixed the first time they ran:
 | `#/checks` rendered a nineteen-character loading line in place of the whole page until its fetch returned | the framing renders immediately; only the counts wait |
 | when the price provider answered with nothing, the closes block rendered an empty div under its heading — indistinguishable from still loading | it now says no prices came back, and that this differs from a price of zero and from a failed request |
 | an empty feed rendered a heading over an empty list, under copy reading "0 stories · live from" with nothing after it | the source clause is conditional, and an empty feed states whether the sources answered and had nothing or did not answer at all |
+
+## Identity
+
+One mark, cut once and used everywhere: a masthead rule over a transmission
+chain — a source, a link, and the holding it reaches. That is the product's
+claim in three marks. It is deliberately not a trading glyph; there is no
+candle, no arrow and no coin, because this tool never says buy or sell and its
+mark should not imply otherwise. The source is the only amber element, which
+is the same rule the interface follows everywhere else.
+
+The geometry lives in `src/mark.ts` and nowhere else. `src/Mark.tsx` draws it
+inline in the masthead in `currentColor`, so it takes the wordmark's ink and
+its hover with it; `npm run brand` cuts the same shape into `favicon.svg`, a
+180px `apple-touch-icon.png` and the 1200×630 `og.png`.
+
+Those three are generated rather than drawn, and committed rather than built
+on deploy: rendering them needs a real browser and the deploy host has no
+Chromium. Vite copies `public/` into `dist/` verbatim, so they are static
+files in the output either way — which is the part that matters, since nothing
+fetching a social image will execute the app to get one. The browser checks
+fetch all three out of the served build and read their bytes, because a social
+image that 404s renders as a blank card rather than as an error.
 
 ## Stack
 
