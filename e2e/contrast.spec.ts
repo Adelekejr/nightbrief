@@ -121,6 +121,18 @@ for (const [name, hash] of [
   })
 }
 
+/** The loop above seeds a portfolio, so `#/` forwards to the desk and the
+ *  landing screen is never what gets measured. This is the one screen a
+ *  reader with no portfolio sees, and the breaking card is the top of it. */
+test('the landing screen reads at AA', async ({ page }) => {
+  await stubApi(page)
+  await page.goto('#/')
+  await page.waitForTimeout(600)
+
+  const bad = await offenders(page)
+  expect(bad, `unreadable text on the landing screen:\n${report(bad)}`).toEqual([])
+})
+
 test('the selected state is legible, not a tint', async ({ page }) => {
   await stubApi(page)
   await page.goto('#/')
