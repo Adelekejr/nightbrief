@@ -53,6 +53,13 @@ export type BreakingPick<E extends BreakingCandidate> = {
   because: string
   direction: BreakingDirection
   confidence: Confidence
+  /**
+   * How many further holdings this event reaches, beyond the one named. A
+   * count, not a list: the card names the strongest match and the Brief
+   * carries the rest, so that a reader is given one thing to look at rather
+   * than a row of tickers to work through.
+   */
+  alsoReached: number
 }
 
 /**
@@ -114,6 +121,25 @@ function confidenceOf(named: BreakingDirect[]): Confidence {
   if (named.length > 0) return 'moderate'
   return 'low'
 }
+
+/**
+ * Strongest named match first: a company before a broad-market index, a
+ * headline before body copy — the same two distinctions the matcher already
+ * draws and `confidenceOf` already reads.
+ *
+ * Which matters because the card names one holding out of however many the
+ * story touches. Taking whichever the matcher happened to return first let it
+ * print `confidence: high` — earned by a company named in the headline —
+ * beside a ticker that was only mentioned in body copy. The number and the
+ * name now come from the same ordering, so they cannot disagree.
+ */
+const strength = (d: BreakingDirect) => (d.broad ? 2 : 0) + (d.where === 'title' ? 0 : 1)
+
+const strongestFirst = (named: BreakingDirect[]) =>
+  named
+    .map((d, order) => ({ d, order }))
+    .sort((a, b) => strength(a.d) - strength(b.d) || a.order - b.order)
+    .map((x) => x.d)
 
 const at = (iso: string | null): number => {
   if (!iso) return Number.NEGATIVE_INFINITY
@@ -177,23 +203,31 @@ export function selectBreakingNews<E extends BreakingCandidate>(
   })
 
   // The holding the card names. A named match wins over an inferred one for
-  // the same reason it wins the sort: the reader can check it.
-  const lead = top.named[0] ?? top.inferred[0]
+  // the same reason it wins the sort: the reader can check it. Among named
+  // matches, the strongest one wins.
+  const named = strongestFirst(top.named)
+  const lead = named[0] ?? top.inferred[0]
   const holding = held.get(lead.symbol)
   if (!holding) return null
+
+  const reached = new Set([
+    ...named.map((d) => d.symbol),
+    ...top.inferred.map((i) => i.symbol),
+  ])
 
   return {
     event: top.event,
     holding,
-    basis: top.named.length > 0 ? 'retrieved' : 'inferred',
+    basis: named.length > 0 ? 'retrieved' : 'inferred',
     because:
-      top.named.length > 0
+      named.length > 0
         ? // The matched string and where it was found, both already checked.
-          `named in the ${top.named[0].where === 'title' ? 'headline' : 'story'} as “${top.named[0].term}”`
+          `named in the ${named[0].where === 'title' ? 'headline' : 'story'} as “${named[0].term}”`
         : // The model's own clause, as the triage pass wrote it and the desk
           // already prints it under every story row.
           top.inferred[0].why,
     direction: DIRECTION_ON_THE_DESK,
-    confidence: confidenceOf(top.named),
+    confidence: confidenceOf(named),
+    alsoReached: reached.size - 1,
   }
 }

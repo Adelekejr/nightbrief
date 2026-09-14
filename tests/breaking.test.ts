@@ -165,3 +165,99 @@ test('red belongs to downward alone and green to upward alone', () => {
   // carrier of what it means.
   for (const d of toned) assert.ok(d.word.length > 0)
 })
+
+test('the strongest named match is the one the card names', () => {
+  // A story naming a company in its headline and another only in body copy.
+  // Taking the matcher's first result let the card print the confidence one
+  // match earned beside the ticker of the other.
+  const pick = selectBreakingNews(
+    [
+      event({
+        direct: [
+          { symbol: 'rNVDA', term: 'Nvidia', where: 'summary', broad: false },
+          { symbol: 'rINTC', term: 'Intel', where: 'title', broad: false },
+        ],
+      }),
+    ],
+    HELD,
+  )
+
+  assert.equal(pick?.holding.symbol, 'rINTC')
+  assert.equal(pick?.confidence, 'high')
+  assert.match(pick!.because, /named in the headline/)
+})
+
+test('a company outranks a broad index named in the same headline', () => {
+  const pick = selectBreakingNews(
+    [
+      event({
+        direct: [
+          { symbol: 'rSPY', term: 'S&P 500', where: 'title', broad: true },
+          { symbol: 'rINTC', term: 'Intel', where: 'title', broad: false },
+        ],
+      }),
+    ],
+    [...HELD, { symbol: 'rSPY', name: 'S&P 500 ETF' }],
+  )
+
+  assert.equal(pick?.holding.symbol, 'rINTC')
+})
+
+test('the rest of the holdings are counted, not listed', () => {
+  const pick = selectBreakingNews(
+    [
+      event({
+        direct: [
+          { symbol: 'rINTC', term: 'Intel', where: 'title', broad: false },
+          { symbol: 'rNVDA', term: 'Nvidia', where: 'summary', broad: false },
+        ],
+      }),
+    ],
+    HELD,
+  )
+
+  // One named on the card, one for the Brief to carry.
+  assert.equal(pick?.holding.symbol, 'rINTC')
+  assert.equal(pick?.alsoReached, 1)
+})
+
+test('a holding reached by both layers is counted once', () => {
+  const pick = selectBreakingNews(
+    [event({ direct: [named('rINTC')], inferred: [{ symbol: 'rINTC', why: 'the same one' }] })],
+    HELD,
+  )
+
+  assert.equal(pick?.alsoReached, 0)
+})
+
+test('an event reaching one holding says so with a zero', () => {
+  const pick = selectBreakingNews([event({ direct: [named('rINTC')] })], HELD)
+  assert.equal(pick?.alsoReached, 0)
+})
+
+test('holdings outside the portfolio are not counted among the rest', () => {
+  const pick = selectBreakingNews(
+    [event({ direct: [named('rINTC'), { symbol: 'rAMD', term: 'AMD', where: 'title', broad: false }] })],
+    HELD,
+  )
+
+  // rAMD is in the listing but not in this reader's holdings, so it is not
+  // something the card can promise the Brief carries.
+  assert.equal(pick?.alsoReached, 0)
+})
+
+test('stripping the inferred layer leaves the named layer standing', () => {
+  // How the landing screen asks its question: named matches only, because
+  // the indirect pass is a model call it does not make on page load.
+  const events = [
+    event({ id: 'guessed', score: 300, inferred: [guessed('rNVDA')] }),
+    event({ id: 'named', score: 100, direct: [named('rINTC')] }),
+  ]
+
+  assert.equal(selectBreakingNews(events, HELD)?.event.id, 'guessed')
+
+  const namedOnly = events.map((e) => ({ ...e, inferred: [] }))
+  const pick = selectBreakingNews(namedOnly, HELD)
+  assert.equal(pick?.event.id, 'named')
+  assert.equal(pick?.basis, 'retrieved')
+})
