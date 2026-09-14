@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import Closes from './Closes'
 import PromptEntry from './PromptEntry'
+import { coverageSummary, nothingFoundLine } from './coverage'
 import { ago } from './states'
 import { Heading, Mono, TimeStamp } from './ui'
 import type { Session } from './types'
@@ -154,30 +155,21 @@ export default function Overnight({
         ) : (
           <>
             <span className="text-signal">{holdings.touchedCount}</span> of your{' '}
-            {total} holding{total > 1 ? 's' : ''} {holdings.touchedCount === 1 ? 'was' : 'were'}{' '}
-            touched by {events.length} event{events.length > 1 ? 's' : ''} while New York was shut.
+            {total} holding{total === 1 ? '' : 's'} {holdings.touchedCount === 1 ? 'was' : 'were'}{' '}
+            touched by {events.length} event{events.length === 1 ? '' : 's'} while New York was shut.
           </>
         )}
       </p>
 
       {events.length === 0 && (
         <p className="mt-4 border-l-2 border-rule pl-3 font-serif text-body text-inferred">
-          That is a finding, not a failure. {coverage.storiesConsidered} stories were
-          checked against your positions in the last {data.windowHours} hours —
-          from {coverage.liveSources.length} market sources
-          {coverage.tickerFeedsLive > 0 &&
-            `, plus the news filed against ${coverage.tickerFeedsLive} of your own tickers`}
-          {' '}— and none of them reached one.
+          {nothingFoundLine(data)}
         </p>
       )}
 
       <p className="mt-3 flex flex-wrap items-baseline gap-x-3 gap-y-1">
         <Mono className="text-micro text-paper-low">
-          checked {ago(data.checkedAt)} · {coverage.storiesConsidered} stories ·{' '}
-          {coverage.liveSources.length} market sources
-          {coverage.tickerFeedsLive > 0 && ` + ${coverage.tickerFeedsLive} of your own tickers`} ·{' '}
-          {data.windowHours}h window
-          {coverage.duplicatesRemoved > 0 && ` · ${coverage.duplicatesRemoved} duplicates merged`}
+          checked {ago(data.checkedAt)} · {coverageSummary(data)}
         </Mono>
         {triage.state !== 'ok' && (
           /* A narrower search, not an error. Red belongs to falsifiers alone,
