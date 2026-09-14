@@ -136,10 +136,10 @@ untouched.
 
 Three things make this mode honest rather than merely useful:
 
-**It says whose question it is answering.** The copy states, above the
-headline, that this is the top story across the listing and not the reader's
-portfolio, which they have not named yet. A card that looked identical to the
-portfolio one would be implying an answer to a question nobody asked.
+**It says whose question it is answering.** One line under the headline says
+this is the top story across the listing and not the reader's portfolio, which
+they have not named yet. A card that looked identical to the portfolio one
+would be implying an answer to a question nobody asked.
 
 **Named matches only.** The indirect pass is a model call. Running one across
 eighteen tokens on a first page load would spend the deployment's free-tier
