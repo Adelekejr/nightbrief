@@ -396,8 +396,8 @@ test.describe('on the landing screen', () => {
     await settled(page, LEAD.title)
 
     // The scope, in words, before anything else on the card.
-    await expect(card(page)).toContainText(/across the whole verified rToken listing/i)
-    await expect(card(page)).toContainText(/not your portfolio/i)
+    await expect(card(page)).toContainText(/Top story across all 18 rTokens/i)
+    await expect(card(page)).toContainText(/set a portfolio yet/i)
 
     const cardTop = (await card(page).boundingBox())!.y
     const pickerTop = (await page.getByRole('button', { name: 'rNVDA' }).boundingBox())!.y
@@ -410,19 +410,28 @@ test.describe('on the landing screen', () => {
     await settled(page, LEAD.title)
 
     const headline = card(page).getByRole('heading', { name: LEAD.title })
-    const caveat = card(page).getByText(/across the whole verified rToken listing/i)
+    const caveat = card(page).getByText(/Top story across all 18 rTokens/i)
 
     const headlineTop = (await headline.boundingBox())!.y
     const caveatTop = (await caveat.boundingBox())!.y
     expect(caveatTop, 'the caveat is still above the headline').toBeGreaterThan(headlineTop)
 
-    // Secondary register: smaller than the headline, and the quieter ink.
+    // Secondary register: smaller than the headline, the quieter ink, and not
+    // the serif the headline above it is set in — a second serif paragraph
+    // there reads as the story carrying on rather than as a caveat about it.
     const type = await caveat.evaluate((el) => {
       const s = getComputedStyle(el)
-      return { px: parseFloat(s.fontSize), colour: s.color }
+      return { px: parseFloat(s.fontSize), colour: s.color, face: s.fontFamily }
     })
     expect(type.px).toBeLessThanOrEqual(14)
-    expect(type.colour).toBe('rgb(167, 157, 141)') // --color-paper-mid
+    expect(type.colour).toBe('rgb(192, 185, 173)') // --color-paper-mid
+    expect(type.face).toMatch(/mono/i)
+
+    // One line of it, not a paragraph to read past on the way to the ticker.
+    const lines = await caveat.evaluate(
+      (el) => el.getBoundingClientRect().height / parseFloat(getComputedStyle(el).lineHeight),
+    )
+    expect(Math.round(lines), 'the caveat has grown past two lines').toBeLessThanOrEqual(2)
 
     // And it still comes before the ticker, which is what it qualifies.
     const tickerTop = (await card(page).getByText('rNVDA').first().boundingBox())!.y
@@ -551,8 +560,8 @@ test.describe('on the landing screen', () => {
 
     // The desk's own event, and none of the landing copy.
     await settled(page, OVERNIGHT.events[0].title)
-    await expect(card(page)).not.toContainText(/not your portfolio/i)
-    await expect(card(page)).not.toContainText(/across the whole verified rToken listing/i)
+    await expect(card(page)).not.toContainText(/Top story across all 18 rTokens/i)
+    await expect(card(page)).not.toContainText(/set a portfolio yet/i)
   })
 
   test('holds together at 360px, with every control named and reachable', async ({ page }) => {

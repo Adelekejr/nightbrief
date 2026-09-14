@@ -160,15 +160,18 @@ export default function BreakingNews(props: Props) {
 
       <h2 className="mt-2 font-serif text-display text-paper break-words">{event.title}</h2>
 
-      {/* Whose question this answers. Under the headline rather than above it:
-          the story is what a reader came for, and the caveat is what qualifies
-          it — but it still has to be read before the ticker below, because on
-          the landing screen these are not the reader's positions. */}
+      {/* Whose question this answers, in one line. Three sentences of it stood
+          between the headline and the ticker and had to be read past; this
+          says the same thing in the space of a caption. What to do about it is
+          left to the picker directly below, which is the answer.
+
+          Mono rather than the page's serif: it sits under a serif headline,
+          and a second serif paragraph there reads as the story continuing. */}
       {listing && (
-        <p className="mt-1.5 font-serif text-caption text-paper-mid">
-          The top story across the whole verified rToken listing — not your
-          portfolio, which you have not named yet. Name it below and the desk
-          ranks everything against it instead.
+        <p className="mt-1.5">
+          <Mono className="text-caption text-paper-mid">
+            Top story across all 18 rTokens — you haven't set a portfolio yet.
+          </Mono>
         </p>
       )}
 
