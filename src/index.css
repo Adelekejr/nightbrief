@@ -23,11 +23,17 @@
 
   /* ---- ink ------------------------------------------------------------ */
   --color-paper: #ede6d8;
-  --color-paper-mid: #a79d8d;
-  /* The quietest ink still has to clear 4.5:1 on the stock. At #736a5c it
-     read 3.4:1 — fine on a bright desktop, illegible on a phone at 1am,
-     which is the only time anyone opens this. */
-  --color-paper-low: #8a7f6f;
+  /* Three tiers of ink, and every one of them clears 7:1 on the stock rather
+     than the 4.5:1 AA floor. AA is the point at which text stops failing, not
+     the point at which it becomes comfortable, and this is read on a phone at
+     1am — so the muted tiers are held to the AAA bar instead.
+
+     Measured on #16130f: paper 14.9:1, paper-mid 9.5:1, paper-low 7.1:1. The
+     steps between them are what keeps "secondary" and "quietest" distinguish-
+     able; lifting the quietest to 7:1 alone would have collapsed it into the
+     tier above and flattened the hierarchy this palette reads by. */
+  --color-paper-mid: #c0b9ad;
+  --color-paper-low: #a89f93;
 
   /* ---- rules ---------------------------------------------------------- */
   --color-rule: #2e2820;
@@ -39,8 +45,9 @@
   /* Text sitting on a filled amber block. */
   --color-signal-on: #16130f;
 
-  /* Model inference, cooler than the page so it reads as a different voice. */
-  --color-inferred: #8ba1b3;
+  /* Model inference, cooler than the page so it reads as a different voice.
+     Held to the same 7:1 bar — 7.6:1, sitting between the two muted tiers. */
+  --color-inferred: #94a9b9;
   /* Reserved for one thing only: what would prove the reasoning wrong. */
   --color-falsify: #d9614c;
 
@@ -58,14 +65,18 @@
   /* ---- type scale ------------------------------------------------------
    * Six steps. A financial interface drifts toward terminal density by
    * acquiring sizes one at a time; a fixed scale is what prevents it.       */
-  --text-micro: 0.6875rem;      /* 11px — mono metadata, labels */
+  /* Metadata is read, not glanced at — a source, a timestamp, a ticker are
+     what a reader checks the prose against. 11px treated it as decoration. */
+  --text-micro: 0.75rem;        /* 12px — mono metadata, labels */
   --text-micro--line-height: 1.45;
   --text-caption: 0.8125rem;    /* 13px — secondary prose */
   --text-caption--line-height: 1.5;
-  --text-body: 0.9375rem;       /* 15px — reading size */
-  --text-body--line-height: 1.62;
-  --text-lede: 1.0625rem;       /* 17px — chain links, event rows */
-  --text-lede--line-height: 1.42;
+  --text-body: 1.0625rem;       /* 17px — reading size */
+  --text-body--line-height: 1.65;
+  /* Was 17px, which body has now grown into. Lifted one step so the register
+     above the reading size stays a register rather than a synonym. */
+  --text-lede: 1.125rem;        /* 18px — chain links, event rows */
+  --text-lede--line-height: 1.45;
   --text-display: 1.3125rem;    /* 21px — section answers */
   --text-display--line-height: 1.32;
   --text-page: 1.6875rem;       /* 27px — the one conclusion per page */
@@ -87,6 +98,29 @@ body {
   font-family: var(--font-serif);
   font-optical-sizing: auto;
   -webkit-font-smoothing: antialiased;
+}
+
+/* Measure.
+ *
+ * The column is sized for the reading size, and caption prose fits half as
+ * many characters again inside it — the same container gives a comfortable
+ * 67-character line of body and a 95-character line of caption. `ch` is
+ * relative to the element's own size, so one rule holds both registers to the
+ * same measure without narrowing the column or moving anything else. Below
+ * about 24rem of viewport it never binds, so a phone is untouched by it.
+ *
+ * 62 and not 70: `ch` is the width of a zero, and Newsreader's zero is wider
+ * than its average letter, so 70ch renders as about 79 characters. 62ch
+ * measures as the ~70 this is actually aiming at.
+ *
+ * Block prose only: an inline span ignores max-width, which is what leaves
+ * every badge, ticker and metadata row exactly where it was. */
+p.text-caption,
+p.text-body,
+li.text-caption,
+li.text-body,
+dd.text-caption {
+  max-width: 62ch;
 }
 
 /* Every control moves under the finger. Position, not shadow. */
