@@ -79,14 +79,29 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   const raw = typeof req.query.holdings === 'string' ? req.query.holdings : ''
   const requested = raw.split(',').map((s) => s.trim()).filter(Boolean).slice(0, 25)
 
-  const held: RToken[] = []
+  /**
+   * The landing screen, which has no portfolio to rank against yet. It asks
+   * the same question of the whole verified listing instead: what did the last
+   * thirty-six hours name, out of every rToken we have confirmed exists.
+   *
+   * Named matches only. The indirect pass is a model call, and making one
+   * across eighteen tokens on a reader's first page load would spend the
+   * deployment's free-tier quota before they have chosen anything — and would
+   * put inference in front of someone who has not yet seen what this tool
+   * treats as fact.
+   */
+  const acrossListing = req.query.universe === '1'
+
+  const held: RToken[] = acrossListing ? [...UNIVERSE] : []
   const unverified: string[] = []
-  for (const input of requested) {
-    const r = resolve(input)
-    if (r.known) {
-      if (!held.some((t) => t.symbol === r.token.symbol)) held.push(r.token)
-    } else {
-      unverified.push(input)
+  if (!acrossListing) {
+    for (const input of requested) {
+      const r = resolve(input)
+      if (r.known) {
+        if (!held.some((t) => t.symbol === r.token.symbol)) held.push(r.token)
+      } else {
+        unverified.push(input)
+      }
     }
   }
 
@@ -165,7 +180,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   const [general, perTicker] = await Promise.all([
     Promise.all(SOURCES.map((s) => fetchSource(s))),
     Promise.all(
-      held.slice(0, MAX_TICKER_FEEDS).map(async (t) => {
+      // Per-holding feeds are one request per ticker. Across the whole listing
+      // that is eighteen of them on a first page load, to answer a question
+      // the general market feeds already answer: a story big enough to be the
+      // top one across every rToken is not one that only a ticker feed carried.
+      (acrossListing ? [] : held.slice(0, MAX_TICKER_FEEDS)).map(async (t) => {
         const { result, items } = await fetchSource(tickerFeed(t.underlying), 4000)
         return {
           result,
@@ -265,7 +284,15 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   const triageAttempts: Array<{ model: string; kind: string; detail: string }> = []
   const triageAt = Date.now()
 
-  if (hasKey() && recent.length > 0) {
+  if (acrossListing) {
+    // Deliberately not run, which is neither a missing key nor a pass that
+    // failed to answer. The state field carries the only two words it has for
+    // "the indirect layer contributed nothing"; the detail says which it is.
+    triageState = 'unavailable'
+    triageDetail = 'not run: the indirect pass is a model call, and is not made across the whole listing'
+  }
+
+  if (!acrossListing && hasKey() && recent.length > 0) {
     const holdingsBlock = held
       .map((t) => `${t.symbol} — ${t.name}. ${t.business}`)
       .join('\n')
@@ -330,6 +357,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   res.setHeader('cache-control', 's-maxage=300, stale-while-revalidate=900')
   res.status(200).json({
     ok: true,
+    // Which question this answer is to. A reader hitting the endpoint should
+    // not have to infer it from the size of the holdings array.
+    mode: acrossListing ? 'listing' : 'portfolio',
     checkedAt: new Date().toISOString(),
     marketNow: sessionAt(new Date()),
     windowHours: WINDOW_HOURS,

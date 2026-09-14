@@ -64,6 +64,12 @@ export default function App() {
     at: "idle",
   });
   const [brief, setBrief] = useState<Async<AnalysisResponse>>({ at: "idle" });
+  // The landing screen's own scan, against the whole verified listing rather
+  // than a portfolio. Kept separate from `overnight` because they answer
+  // different questions and neither should ever be shown as the other.
+  const [listing, setListing] = useState<Async<OvernightResponse>>({
+    at: "idle",
+  });
   const [session, setSession] = useState<Session | null>(null);
   const top = useRef<HTMLDivElement>(null);
 
@@ -84,11 +90,37 @@ export default function App() {
       );
   }, []);
 
+  const fetchListing = useCallback(() => {
+    setListing({ at: "loading", since: Date.now() });
+
+    // Named matches only, across the whole listing. The indirect pass is a
+    // model call and is not made here — see the endpoint for why.
+    fetch("/api/overnight?universe=1")
+      .then(async (r) => {
+        const body = await r.json();
+        if (!r.ok || !body.ok)
+          throw new Error(body.reason ?? "The overnight desk did not respond.");
+        setListing({ at: "ready", data: body as OvernightResponse });
+        setSession(body.marketNow ?? null);
+      })
+      .catch((err: Error) =>
+        setListing({ at: "failed", kind: "listing", reason: err.message }),
+      );
+  }, []);
+
   // The desk is only meaningful once there is a portfolio to rank against.
   useEffect(() => {
     if (holdings.length > 0 && overnight.at === "idle")
       fetchOvernight(holdings);
   }, [holdings, overnight.at, fetchOvernight]);
+
+  // The landing screen has no portfolio, so it asks the listing instead. Only
+  // there: once holdings exist the gate forwards to the desk, and the desk's
+  // own scan is the one that answers.
+  useEffect(() => {
+    if (route.name === "gate" && holdings.length === 0 && listing.at === "idle")
+      fetchListing();
+  }, [route.name, holdings.length, listing.at, fetchListing]);
 
   // Only the first-run gate forwards. The holdings editor is its own route
   // precisely so that it can never be redirected away from — an earlier
@@ -103,7 +135,12 @@ export default function App() {
   }, [route.name, holdings.length]);
 
   const runBrief = useCallback(
-    async (req: BriefRequest) => {
+    /** `against` overrides the portfolio this Brief is reasoned against. Only
+     *  the landing card passes it, where there is no portfolio yet and the
+     *  question is about the listing: it sends the holdings that one event
+     *  actually reaches, which is how the card can name the strongest match
+     *  alone and still promise the Brief carries the rest. */
+    async (req: BriefRequest, against?: string[]) => {
       setBrief({ at: "loading", since: Date.now() });
       navigate("brief");
 
@@ -111,7 +148,7 @@ export default function App() {
         const res = await fetch("/api/analyze", {
           method: "POST",
           headers: { "content-type": "application/json" },
-          body: JSON.stringify({ ...req, holdings }),
+          body: JSON.stringify({ ...req, holdings: against ?? holdings }),
         });
         const body = await res.json();
 
@@ -138,15 +175,26 @@ export default function App() {
   /** One path from a ranked event to its Brief, shared by the story list and
    *  the breaking card, so the two cannot drift onto different articles. */
   const openBriefFor = useCallback(
-    (e: RankedEvent) =>
-      runBrief({
-        title: e.title,
-        text: e.summary || e.title,
-        publisher: e.publisher,
-        url: e.url,
-        publishedAt: e.publishedAt ?? undefined,
-      }),
+    (e: RankedEvent, against?: string[]) =>
+      runBrief(
+        {
+          title: e.title,
+          text: e.summary || e.title,
+          publisher: e.publisher,
+          url: e.url,
+          publishedAt: e.publishedAt ?? undefined,
+        },
+        against,
+      ),
     [runBrief],
+  );
+
+  /** The landing card's Brief. There is no portfolio to reason against, so the
+   *  Brief is run against the holdings this one event reaches — every one of
+   *  them, including the ones the card did not have room to name. */
+  const openListingBriefFor = useCallback(
+    (e: RankedEvent) => openBriefFor(e, e.symbols),
+    [openBriefFor],
   );
 
   const loadExample = useCallback(() => {
@@ -188,6 +236,10 @@ export default function App() {
     saveHoldings([])
     setHoldings([])
     setOvernight({ at: 'idle' })
+    // The landing card scans when a reader arrives at the landing screen, and
+    // clearing sends them back to it. A result from before the clear would be
+    // a scan they did not ask for, dated as though they had.
+    setListing({ at: 'idle' })
     setRestored(false)
     // Clearing from the editor used to leave the reader on a screen with a
     // disabled primary action and no way out but the masthead, which restored
@@ -309,6 +361,38 @@ export default function App() {
         <main className={reading ? "" : "mt-8"}>
           {route.name === "gate" && (
             <>
+              {/* Above the picker: something true and specific before the
+                  reader has given anything, and the same card they will meet
+                  again on the desk once they have. */}
+              {listing.at === "loading" && (
+                <BreakingNews mode="listing" state="loading" />
+              )}
+              {listing.at === "failed" && (
+                <BreakingNews
+                  mode="listing"
+                  state="failed"
+                  onRetry={fetchListing}
+                />
+              )}
+              {listing.at === "ready" && (
+                <BreakingNews
+                  mode="listing"
+                  state="ready"
+                  pick={selectBreakingNews(
+                    // Named matches only. The endpoint does not run the
+                    // indirect pass in this mode, and stripping the field
+                    // here makes that a property of the screen rather than
+                    // a promise about what the server sent.
+                    listing.data.events.map((e) => ({ ...e, inferred: [] })),
+                    listing.data.holdings.verified,
+                  )}
+                  checkedAt={listing.data.checkedAt}
+                  windowHours={listing.data.windowHours}
+                  onOpenBrief={openListingBriefFor}
+                  onRescan={fetchListing}
+                />
+              )}
+
               <PortfolioGate initial={holdings} onReady={commitHoldings} onClear={clearHoldings} />
               <div className="mt-8 border-t border-rule pt-6">
                 <p className="font-serif text-caption text-paper-mid">
@@ -332,15 +416,19 @@ export default function App() {
               {/* Directly below the masthead, above the story list. It follows
                   the desk's own three states: the desk is what is being
                   scanned, so the card cannot claim to know more than it. */}
-              {overnight.at === "loading" && <BreakingNews state="loading" />}
+              {overnight.at === "loading" && (
+                <BreakingNews mode="portfolio" state="loading" />
+              )}
               {overnight.at === "failed" && (
                 <BreakingNews
+                  mode="portfolio"
                   state="failed"
                   onRetry={() => fetchOvernight(holdings)}
                 />
               )}
               {overnight.at === "ready" && (
                 <BreakingNews
+                  mode="portfolio"
                   state="ready"
                   pick={selectBreakingNews(
                     overnight.data.events,

@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test'
-import { OVERNIGHT, stubApi } from './fixtures'
+import { LISTING, OVERNIGHT, stubApi } from './fixtures'
 
 /**
  * The breaking card, checked the way everything else here is: in a real
@@ -10,6 +10,11 @@ import { OVERNIGHT, stubApi } from './fixtures'
  * more than the desk knows, so most of what follows is about what it refuses
  * to print: no direction it has not been given, no older event standing in
  * for a failed check, no wording that implies a watch is running.
+ *
+ * The last block covers the landing screen, where the same card answers a
+ * different question — the listing's rather than a portfolio's — and has one
+ * more thing to refuse: implying that any of it is about positions the reader
+ * has not named.
  */
 
 const KEY = 'nightdesk.holdings'
@@ -314,4 +319,177 @@ test.describe('on a narrow screen', () => {
       expect(small, `targets too small at ${width}px`).toEqual([])
     })
   }
+})
+
+test.describe('on the landing screen', () => {
+  const LEAD = LISTING.events[0]
+
+  /** No portfolio on disk: the state a reader arrives in. */
+  const cold = (page: import('@playwright/test').Page, overrides = {}) =>
+    stubApi(page, overrides)
+
+  test('renders above the picker, and says whose question it answers', async ({ page }) => {
+    await cold(page)
+    await page.goto('#/')
+    await settled(page, LEAD.title)
+
+    // The scope, in words, before anything else on the card.
+    await expect(card(page)).toContainText(/across the whole verified rToken listing/i)
+    await expect(card(page)).toContainText(/not your portfolio/i)
+
+    const cardTop = (await card(page).boundingBox())!.y
+    const pickerTop = (await page.getByRole('button', { name: 'rNVDA' }).boundingBox())!.y
+    expect(cardTop, 'the card is below the picker').toBeLessThan(pickerTop)
+  })
+
+  test('names one holding and counts the rest, never a row of tickers', async ({ page }) => {
+    await cold(page)
+    await page.goto('#/')
+    await settled(page, LEAD.title)
+
+    // The fixture's story names Nvidia in the headline and Intel in the body,
+    // so the headline match is the one the card names.
+    await expect(card(page)).toContainText('rNVDA')
+    await expect(card(page)).toContainText(/named in the headline as .Nvidia./)
+    // The weaker match is counted, not printed as a second ticker.
+    await expect(card(page)).toContainText(/names 1 other rToken in the listing/)
+    expect(await card(page).innerText()).not.toContain('rINTC')
+  })
+
+  test('shows named matches only, never an inference', async ({ page }) => {
+    // Even if the endpoint were to answer with indirect links, this screen
+    // does not run that layer and must not print one.
+    await cold(page, {
+      '**/api/overnight*': {
+        ...LISTING,
+        events: [
+          {
+            ...LEAD,
+            inferred: [{ symbol: 'rINTC', why: 'competes for the same foundry capacity' }],
+          },
+        ],
+      },
+    })
+    await page.goto('#/')
+    await settled(page, LEAD.title)
+
+    const text = await card(page).innerText()
+    expect(text).toContain('fact')
+    expect(text).not.toContain('inference')
+    expect(text).not.toContain('competes for the same foundry capacity')
+  })
+
+  test('keeps the amber, the timestamp and the scanned line', async ({ page }) => {
+    await cold(page)
+    await page.goto('#/')
+    await settled(page, LEAD.title)
+
+    const text = await card(page).innerText()
+    expect(text).toMatch(/last checked/)
+    expect(text).toMatch(/Nothing here updates on its own/)
+    expect(text).not.toMatch(/\bLIVE\b/)
+
+    // Same rail as the portfolio card: direction is unclear here too.
+    const rail = await card(page).evaluate((el) => getComputedStyle(el).borderLeftColor)
+    expect(rail).not.toMatch(/217,\s*97,\s*76/)
+    await expect(card(page)).toContainText('unclear')
+  })
+
+  test('the three states hold here too', async ({ page }) => {
+    // Loading.
+    await cold(page)
+    await page.route('**/api/overnight*', async (r) => {
+      await new Promise((res) => setTimeout(res, 3000))
+      await r.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify(LISTING),
+      })
+    })
+    await page.goto('#/')
+    await expect(card(page)).toContainText(/against the verified rToken listing/)
+    await settled(page, LEAD.title)
+  })
+
+  test('nothing named is a result, not an error', async ({ page }) => {
+    await cold(page, { '**/api/overnight*': { ...LISTING, events: [] } })
+    await page.goto('#/')
+
+    await expect(card(page)).toContainText(/Nothing in the last 36 hours named a verified rToken/)
+    await expect(card(page).getByRole('button', { name: 'Scan again' })).toBeEnabled()
+    // The picker is still the way forward, and still there.
+    await expect(page.getByRole('button', { name: 'rNVDA' })).toBeVisible()
+  })
+
+  test('a failed check shows no event, and offers a retry', async ({ page }) => {
+    await cold(page)
+    await page.route('**/api/overnight*', (r) =>
+      r.fulfill({ status: 502, contentType: 'application/json', body: '{"ok":false}' }),
+    )
+    await page.goto('#/')
+
+    await expect(card(page)).toContainText(/did not complete/)
+    await expect(card(page).getByRole('button', { name: 'Check again' })).toBeEnabled()
+    await expect(card(page)).not.toContainText(LEAD.title)
+  })
+
+  test('the Brief it opens carries every holding the story reaches', async ({ page }) => {
+    await cold(page)
+
+    let posted: Record<string, unknown> | null = null
+    await page.route('**/api/analyze', async (route) => {
+      posted = route.request().postDataJSON()
+      await route.fulfill({ status: 500, contentType: 'application/json', body: '{}' })
+    })
+
+    await page.goto('#/')
+    await settled(page, LEAD.title)
+    await card(page).getByRole('button', { name: /open the full brief/i }).click()
+    await expect(page).toHaveURL(/#\/brief$/)
+
+    // There is no portfolio to reason against, so the Brief is run against
+    // the holdings this event reaches — including the one the card counted
+    // rather than named. Without this it would be sent an empty portfolio.
+    expect(posted).toMatchObject({ url: LEAD.url, holdings: ['rNVDA', 'rINTC'] })
+  })
+
+  test('hands over to the portfolio card once holdings are named', async ({ page }) => {
+    await cold(page)
+    await page.goto('#/')
+    await settled(page, LEAD.title)
+
+    await page.getByRole('button', { name: 'rNVDA' }).click()
+    await page.getByRole('button', { name: /check the overnight against 1 holding/i }).click()
+    await expect(page).toHaveURL(/#\/overnight$/)
+
+    // The desk's own event, and none of the landing copy.
+    await settled(page, OVERNIGHT.events[0].title)
+    await expect(card(page)).not.toContainText(/not your portfolio/i)
+    await expect(card(page)).not.toContainText(/across the whole verified rToken listing/i)
+  })
+
+  test('holds together at 360px, with every control named and reachable', async ({ page }) => {
+    await cold(page)
+    await page.setViewportSize({ width: 360, height: 800 })
+    await page.goto('#/')
+    await settled(page, LEAD.title)
+
+    const overflow = await page.evaluate(
+      () => document.documentElement.scrollWidth - document.documentElement.clientWidth,
+    )
+    expect(overflow, 'the landing card overflows at 360px').toBeLessThanOrEqual(1)
+
+    const faults = await card(page).evaluate((el) =>
+      [...el.querySelectorAll('button, a[href]')]
+        .map((n) => ({ n, box: n.getBoundingClientRect() }))
+        .filter(
+          ({ n, box }) =>
+            box.height < 24 ||
+            box.width < 24 ||
+            ((n.getAttribute('aria-label') || n.textContent || '').trim().length === 0),
+        )
+        .map(({ n, box }) => `${n.textContent?.trim()} — ${Math.round(box.width)}×${Math.round(box.height)}`),
+    )
+    expect(faults, 'unnamed or undersized controls on the landing card').toEqual([])
+  })
 })

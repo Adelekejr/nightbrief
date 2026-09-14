@@ -61,6 +61,47 @@ export const OVERNIGHT = {
   ],
 }
 
+/**
+ * What the landing screen reads from `/api/overnight?universe=1`: the same
+ * shape, asked of the whole verified listing instead of a portfolio, and with
+ * the indirect layer not run at all.
+ *
+ * Its one event names two rTokens — one in the headline, one in the body — so
+ * a check of the card here is also a check that the stronger match is the one
+ * named and the other is counted rather than listed.
+ */
+export const LISTING = {
+  ...OVERNIGHT,
+  mode: 'listing',
+  holdings: {
+    verified: [
+      { symbol: 'rNVDA', name: 'Nvidia', category: 'semiconductors' },
+      { symbol: 'rINTC', name: 'Intel', category: 'semiconductors' },
+    ],
+    unverified: [],
+    touchedCount: 2,
+  },
+  triage: {
+    state: 'unavailable',
+    detail: 'not run: the indirect pass is a model call, and is not made across the whole listing',
+  },
+  coverage: { ...OVERNIGHT.coverage, tickerFeedsLive: 0 },
+  events: [
+    {
+      ...OVERNIGHT.events[0],
+      id: 'cnbc-top:listing',
+      title: 'Nvidia Leads Chip Selloff As Export Rules Tighten Overnight',
+      url: 'https://example.invalid/export-rules',
+      direct: [
+        { symbol: 'rNVDA', term: 'Nvidia', where: 'title', broad: false },
+        { symbol: 'rINTC', term: 'Intel', where: 'summary', broad: false },
+      ],
+      inferred: [],
+      symbols: ['rNVDA', 'rINTC'],
+    },
+  ],
+}
+
 /** What Validation.tsx reads from `/api/overnight?report=1` — a distinct
  *  shape from OVERNIGHT above, so it is stubbed as its own response. */
 export const OVERNIGHT_REPORT = {
@@ -121,13 +162,17 @@ export async function stubApi(page: Page, overrides: Record<string, unknown> = {
     ...overrides,
   }
 
-  // The overnight endpoint answers two different shapes from one path,
-  // switched on ?report=1 — kept as one handler rather than two static
-  // bodies so a test cannot accidentally stub the wrong one.
+  // The overnight endpoint answers three different shapes from one path,
+  // switched on ?report=1 and ?universe=1 — kept as one handler rather than
+  // three static bodies so a test cannot accidentally stub the wrong one.
   await page.route('**/api/overnight*', (route) => {
-    const body = new URL(route.request().url()).searchParams.get('report') === '1'
-      ? OVERNIGHT_REPORT
-      : OVERNIGHT
+    const query = new URL(route.request().url()).searchParams
+    const body =
+      query.get('report') === '1'
+        ? OVERNIGHT_REPORT
+        : query.get('universe') === '1'
+          ? LISTING
+          : OVERNIGHT
     route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(body) })
   })
 

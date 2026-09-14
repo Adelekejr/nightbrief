@@ -15,9 +15,24 @@ import { ConfidenceMark, Mono, TimeStamp } from './ui'
  * The card never implies a watch is running. Nightbrief scans when a reader
  * asks it to, so the time it shows is the last scan and says so, and there
  * is no pulse, no blink and no "live".
+ *
+ * Two modes, one card.
+ *
+ *   portfolio  above the desk's story list, ranked against holdings the
+ *              reader named. Unchanged.
+ *   listing    on the landing screen, where there is no portfolio yet. The
+ *              same matcher run against the whole verified rToken listing,
+ *              through the same selector. Named matches only, and the copy
+ *              says whose question it is answering — the listing's, not a
+ *              portfolio the reader has not chosen.
+ *
+ * The frame, the amber, the three states and the scanned-when-you-asked line
+ * are the same in both. Only the copy that would otherwise be untrue changes.
  */
 
-type Props =
+type Mode = 'portfolio' | 'listing'
+
+type Props = { mode: Mode } & (
   | { state: 'loading' }
   | { state: 'failed'; onRetry: () => void }
   | {
@@ -29,6 +44,7 @@ type Props =
       onOpenBrief: (event: RankedEvent) => void
       onRescan: () => void
     }
+)
 
 const RAIL: Record<'rise' | 'fall' | 'neutral', string> = {
   rise: 'border-rise',
@@ -65,16 +81,21 @@ function Label({ trailing }: { trailing: string }) {
 }
 
 export default function BreakingNews(props: Props) {
+  const listing = props.mode === 'listing'
+
   if (props.state === 'loading') {
     return (
       <Card tone="neutral">
         <Label trailing="scanning" />
         <p className="mt-2 font-serif text-lede text-paper">
-          Reading the overnight window against your holdings.
+          {listing
+            ? 'Reading the overnight window against the verified rToken listing.'
+            : 'Reading the overnight window against your holdings.'}
         </p>
         <p className="mt-1.5 font-serif text-caption text-paper-mid">
-          Every live news source, plus the news filed against your own tickers,
-          matched by name and then read again for links the stories never state.
+          {listing
+            ? 'Every live news source, matched by name against every rToken this desk has confirmed exists.'
+            : 'Every live news source, plus the news filed against your own tickers, matched by name and then read again for links the stories never state.'}
         </p>
       </Card>
     )
@@ -110,11 +131,14 @@ export default function BreakingNews(props: Props) {
       <Card tone="neutral">
         <Label trailing={`last checked ${ago(checkedAt)}`} />
         <p className="mt-2 font-serif text-lede text-paper">
-          Nothing in the last {windowHours} hours was matched to your holdings.
+          {listing
+            ? `Nothing in the last ${windowHours} hours named a verified rToken.`
+            : `Nothing in the last ${windowHours} hours was matched to your holdings.`}
         </p>
         <p className="mt-1.5 font-serif text-caption text-paper-mid">
-          The sources were read and nothing in them reached a position you hold.
-          What was searched is below.
+          {listing
+            ? 'The sources were read and none of them named anything in the listing. Name your holdings below and the desk will look for indirect links as well.'
+            : 'The sources were read and nothing in them reached a position you hold. What was searched is below.'}
         </p>
         <button
           type="button"
@@ -127,12 +151,23 @@ export default function BreakingNews(props: Props) {
     )
   }
 
-  const { event, holding, basis, because, direction, confidence } = pick
+  const { event, holding, basis, because, direction, confidence, alsoReached } = pick
   const { word, tone } = DIRECTION[direction]
 
   return (
     <Card tone={tone}>
       <Label trailing={`last checked ${ago(checkedAt)}`} />
+
+      {/* Whose question this answers. Without it the card reads as being
+          about the reader's positions, which on the landing screen they have
+          not named — the one thing this mode must never imply. */}
+      {listing && (
+        <p className="mt-1 font-serif text-caption text-paper-mid">
+          The top story across the whole verified rToken listing — not your
+          portfolio, which you have not named yet. Name it below and the desk
+          ranks everything against it instead.
+        </p>
+      )}
 
       <h2 className="mt-2 font-serif text-display text-paper break-words">{event.title}</h2>
 
@@ -156,6 +191,17 @@ export default function BreakingNews(props: Props) {
           {because}
         </span>
       </p>
+
+      {/* A count, never a row of tickers. One story naming six rTokens would
+          otherwise turn the top of the landing screen into a list to work
+          through, which is the thing this card exists instead of. */}
+      {listing && alsoReached > 0 && (
+        <p className="mt-1.5 font-serif text-caption text-paper-mid">
+          This story names {alsoReached} other{' '}
+          {alsoReached === 1 ? 'rToken' : 'rTokens'} in the listing. The Brief
+          carries {alsoReached === 1 ? 'it' : 'them'}.
+        </p>
+      )}
 
       <p className="mt-2.5 flex flex-wrap items-baseline gap-x-4 gap-y-1.5">
         <span className="flex items-baseline gap-2">

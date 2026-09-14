@@ -124,20 +124,54 @@ of a window that has since moved.
 Nothing is monitored. The desk scans when a reader asks it to, so the card
 says "last checked" and states that nothing on it updates on its own.
 
+### On the landing screen, before there is a portfolio
+
+A reader arriving for the first time has named nothing, so there is nothing to
+rank against. The same card runs the same matcher through the same selector
+against the **whole verified rToken listing** instead, and sits above the
+picker. Once holdings are named, it is the portfolio card again — that mode is
+untouched.
+
+Three things make this mode honest rather than merely useful:
+
+**It says whose question it is answering.** The copy states, above the
+headline, that this is the top story across the listing and not the reader's
+portfolio, which they have not named yet. A card that looked identical to the
+portfolio one would be implying an answer to a question nobody asked.
+
+**Named matches only.** The indirect pass is a model call. Running one across
+eighteen tokens on a first page load would spend the deployment's free-tier
+quota before the reader has chosen anything — and would put inference in front
+of someone who has not yet seen what this tool treats as fact. The endpoint
+does not run it in this mode, and the screen strips the field before selecting,
+so "named only" is a property of both ends rather than a promise by one.
+
+**One story, one holding.** A story naming six rTokens would turn the top of
+the landing screen into a list to work through, which is the thing this card
+exists instead of. The card names the strongest match — a company before an
+index, a headline before body copy — and counts the rest without listing them.
+The Brief behind it is run against every holding that story reaches, so the
+ones it counted are carried rather than dropped.
+
+Per-ticker feeds are not fetched in this mode: that is one request per ticker,
+eighteen of them on a first page load, to answer a question the general market
+feeds already answer. A story big enough to be the top one across every rToken
+is not one that only a ticker feed carried.
+
 ## Status
 
 | Component | State |
 | --- | --- |
 | Public URL | live, no login |
 | Overnight ranking | live, two layers |
-| Breaking card | live, at the top of the desk |
+| Breaking card | live, at the top of the desk and of the landing screen |
 | Brief pipeline | live |
 | Provenance validator | live, and demonstrable at `#/checks` |
 | Article body retrieval | live |
 | News feed | live, 8 of 9 sources answering, plus per-holding feeds |
 | rToken universe | 18 pairs, observed and dated |
 | Worked example | captured, served instantly |
-| Tests | 77, no test framework — Node's runner and type stripping |
+| Tests | 84, no test framework — Node's runner and type stripping |
 | Prices | live — closing price of the underlying share, dated |
 
 **What is real on screen.** Headlines, publishers, timestamps, links and
@@ -161,7 +195,7 @@ measure and was treated as a closed door, not something to work around.
 
 | Route | Purpose |
 | --- | --- |
-| `/api/overnight` | Events ranked against a portfolio, in two labelled layers. `?report=1` returns pipeline metrics without a model call. |
+| `/api/overnight` | Events ranked against a portfolio, in two labelled layers. `?universe=1` ranks against the whole verified listing instead, named matches only and no model call — what the landing screen reads. `?report=1` returns pipeline metrics, also without a model call. |
 | `/api/feed` | Aggregated live news. `?probe=1` measures each source. |
 | `/api/universe` | The verified rToken listing and its provenance. |
 | `/api/analyze` | POST an item and holdings. `GET ?demo=1` runs the worked example live. |
@@ -371,13 +405,13 @@ never implies an understanding that is not there.
 ## Tests
 
 ```
-npm test           # 77 unit tests — the validator, matcher, selector, universe, routing
+npm test           # 84 unit tests — the validator, matcher, selector, universe, routing
 npm run typecheck
-npm run build && npm run test:browser   # 68 checks × 2 device profiles = 136 runs
+npm run build && npm run test:browser   # 79 checks × 2 device profiles = 158 runs
 ```
 
-**Counting them honestly:** 68 distinct browser checks, each run twice — once
-on a Pixel 7 profile and once on desktop — for 136 runs in total. Of those, 133
+**Counting them honestly:** 79 distinct browser checks, each run twice — once
+on a Pixel 7 profile and once on desktop — for 158 runs in total. Of those, 155
 execute and pass and 3 are skipped by design, being phone-only checks (thumb
 target size, sideways scroll, masthead reach) that do not apply to the desktop
 profile. Zero failures.
@@ -406,13 +440,20 @@ and navigation clears 40px, and no screen scrolls sideways on a phone), and
 **degraded states** — every source failing one at a time, empty results, a
 slow answer, and content longer than the column it sits in.
 
-The breaking card has fourteen of its own, because most of what it promises is
-about what it refuses to print: that a failed check shows no event rather than
-an older one, that no wording implies a watch is running, that the direction it
-was never given stays unclear, and that its entrance is opacity and position
-only — checked against the keyframes themselves rather than the class name —
-and nothing at all when the reader has declined motion. Its layout is measured
-at 360px and 390px as well as on both device profiles.
+The breaking card has twenty-four of its own, because most of what it promises
+is about what it refuses to print: that a failed check shows no event rather
+than an older one, that no wording implies a watch is running, that the
+direction it was never given stays unclear, and that its entrance is opacity
+and position only — checked against the keyframes themselves rather than the
+class name — and nothing at all when the reader has declined motion. Its layout
+is measured at 360px and 390px as well as on both device profiles.
+
+Ten of those are the landing mode, which has more to refuse than the portfolio
+one: that it never prints a second ticker, never prints an inference, never
+reads as being about a portfolio the reader has not named, and hands over to
+the portfolio card the moment one exists. The landing screen is also the one
+route the contrast sweep used to miss — every other check seeds a portfolio,
+which makes `#/` forward to the desk before anything can be measured.
 
 Four defects were found and fixed the first time they ran:
 
