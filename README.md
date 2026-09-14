@@ -87,19 +87,57 @@ ranking alone would have scored it zero against a portfolio holding Nvidia.
 If the inference layer is rate limited, the named layer still stands and the
 interface says the indirect pass was unavailable.
 
+## The breaking card
+
+One event, at the top of the desk: the highest-ranked thing reaching the
+portfolio, with the holding it reaches, how it reaches it, and a link to both
+its Brief and its source. It is the answer to "is there one thing I should
+look at" without scrolling a list to find out.
+
+Every string on it is either a fixed label or a value that arrived in the
+response — the headline as published, the publisher, the times, the matched
+holding, and either the string the matcher found or the clause the triage pass
+wrote. Nothing is composed for the card.
+
+**It says less than it could, on purpose.** The selection needs an alert level
+and a confidence mark, and a ranked event carries neither — those belong to a
+Brief, after a model has read the article and the validator has checked it. So
+the ranking weight the desk already computed stands in for the first, which
+also keeps the card from disagreeing with the numbered list below it, and the
+second is derived from the match layer: named in the headline is high, named
+further down or naming an index is moderate, inferred is low. That is
+confidence in the *reach* — the claim the card actually makes — and not in any
+conclusion about the holding, which the card does not draw. Both substitutions
+are named in `src/breaking.ts`.
+
+**Direction is left unclear, and says so.** Whether an event cuts up or down
+for a holding is decided in the Brief, against the article. Nothing on the desk
+carries it, and reading a direction off a headline would be exactly the
+fabrication the validator exists to catch, arriving by a route with no
+validator on it. The card states `unclear` and points at the Brief.
+
+Three states, each stating plainly what is true. Scanning names what is being
+read. Nothing matched is a finding, with the scan offered again. A failed check
+shows **no event at all** — repeating the last one would assert it is current,
+of a window that has since moved.
+
+Nothing is monitored. The desk scans when a reader asks it to, so the card
+says "last checked" and states that nothing on it updates on its own.
+
 ## Status
 
 | Component | State |
 | --- | --- |
 | Public URL | live, no login |
 | Overnight ranking | live, two layers |
+| Breaking card | live, at the top of the desk |
 | Brief pipeline | live |
 | Provenance validator | live, and demonstrable at `#/checks` |
 | Article body retrieval | live |
 | News feed | live, 8 of 9 sources answering, plus per-holding feeds |
 | rToken universe | 18 pairs, observed and dated |
 | Worked example | captured, served instantly |
-| Tests | 65, no test framework — Node's runner and type stripping |
+| Tests | 77, no test framework — Node's runner and type stripping |
 | Prices | live — closing price of the underlying share, dated |
 
 **What is real on screen.** Headlines, publishers, timestamps, links and
@@ -333,13 +371,13 @@ never implies an understanding that is not there.
 ## Tests
 
 ```
-npm test           # 65 unit tests — the validator, matcher, universe, routing
+npm test           # 77 unit tests — the validator, matcher, selector, universe, routing
 npm run typecheck
-npm run build && npm run test:browser   # 54 checks × 2 device profiles = 108 runs
+npm run build && npm run test:browser   # 68 checks × 2 device profiles = 136 runs
 ```
 
-**Counting them honestly:** 54 distinct browser checks, each run twice — once
-on a Pixel 7 profile and once on desktop — for 108 runs in total. Of those, 105
+**Counting them honestly:** 68 distinct browser checks, each run twice — once
+on a Pixel 7 profile and once on desktop — for 136 runs in total. Of those, 133
 execute and pass and 3 are skipped by design, being phone-only checks (thumb
 target size, sideways scroll, masthead reach) that do not apply to the desktop
 profile. Zero failures.
@@ -367,6 +405,14 @@ drawn, nothing moves when motion is declined, targets clear WCAG 2.2's 24px
 and navigation clears 40px, and no screen scrolls sideways on a phone), and
 **degraded states** — every source failing one at a time, empty results, a
 slow answer, and content longer than the column it sits in.
+
+The breaking card has fourteen of its own, because most of what it promises is
+about what it refuses to print: that a failed check shows no event rather than
+an older one, that no wording implies a watch is running, that the direction it
+was never given stays unclear, and that its entrance is opacity and position
+only — checked against the keyframes themselves rather than the class name —
+and nothing at all when the reader has declined motion. Its layout is measured
+at 360px and 390px as well as on both device profiles.
 
 Four defects were found and fixed the first time they ran:
 
