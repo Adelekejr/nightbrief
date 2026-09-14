@@ -44,6 +44,17 @@
   /* Reserved for one thing only: what would prove the reasoning wrong. */
   --color-falsify: #d9614c;
 
+  /* ---- direction ------------------------------------------------------
+   * One element uses these: the signal rail on the breaking card. Elsewhere
+   * this palette refuses red and green on purpose — the tool never says buy
+   * or sell, so it does not borrow a trading terminal's colours — and the
+   * rail is bounded the same way. Red is downward alone, green upward alone,
+   * everything else takes the page's amber, and the direction is printed in
+   * words beside the rail in every case. Both are rules rather than text, so
+   * they are held to 3:1 against the stock, not 4.5:1.                     */
+  --color-rise: #5f9e6e;
+  --color-fall: #c2604f;
+
   /* ---- type scale ------------------------------------------------------
    * Six steps. A financial interface drifts toward terminal density by
    * acquiring sizes one at a time; a fixed scale is what prevents it.       */
@@ -93,6 +104,23 @@ button:active:not(:disabled) {
   outline-offset: 2px;
 }
 
+/* The breaking card arriving. Opacity and position only — nothing scales,
+   nothing bounces, and no number inside it is animated, because a figure
+   counting up reads as a figure being measured right now. */
+@keyframes settle {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+.settle {
+  animation: settle 200ms ease-out both;
+}
+
 @media (prefers-reduced-motion: reduce) {
   button,
   [role='button'] {
@@ -100,6 +128,11 @@ button:active:not(:disabled) {
   }
   button:active:not(:disabled) {
     transform: none;
+  }
+  /* Not a shorter animation — none. The browser check reads the computed
+     animation name, and a reader who declined motion declined all of it. */
+  .settle {
+    animation: none;
   }
 }
 
