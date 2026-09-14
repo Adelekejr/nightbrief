@@ -136,10 +136,10 @@ untouched.
 
 Three things make this mode honest rather than merely useful:
 
-**It says whose question it is answering.** The copy states, above the
-headline, that this is the top story across the listing and not the reader's
-portfolio, which they have not named yet. A card that looked identical to the
-portfolio one would be implying an answer to a question nobody asked.
+**It says whose question it is answering.** One line under the headline says
+this is the top story across the listing and not the reader's portfolio, which
+they have not named yet. A card that looked identical to the portfolio one
+would be implying an answer to a question nobody asked.
 
 **Named matches only.** The indirect pass is a model call. Running one across
 eighteen tokens on a first page load would spend the deployment's free-tier
@@ -173,7 +173,7 @@ is not one that only a ticker feed carried.
 | News feed | live, 8 of 9 sources answering, plus per-holding feeds |
 | rToken universe | 18 pairs, observed and dated |
 | Worked example | captured, served instantly |
-| Tests | 84, no test framework — Node's runner and type stripping |
+| Tests | 93, no test framework — Node's runner and type stripping |
 | Prices | live — closing price of the underlying share, dated |
 
 **What is real on screen.** Headlines, publishers, timestamps, links and
@@ -407,13 +407,13 @@ never implies an understanding that is not there.
 ## Tests
 
 ```
-npm test           # 84 unit tests — the validator, matcher, selector, universe, routing
+npm test           # 93 unit tests — the validator, matcher, selector, coverage, universe, routing
 npm run typecheck
-npm run build && npm run test:browser   # 81 checks × 2 device profiles = 162 runs
+npm run build && npm run test:browser   # 89 checks × 2 device profiles = 178 runs
 ```
 
-**Counting them honestly:** 81 distinct browser checks, each run twice — once
-on a Pixel 7 profile and once on desktop — for 162 runs in total. Of those, 159
+**Counting them honestly:** 89 distinct browser checks, each run twice — once
+on a Pixel 7 profile and once on desktop — for 178 runs in total. Of those, 175
 execute and pass and 3 are skipped by design, being phone-only checks (thumb
 target size, sideways scroll, masthead reach) that do not apply to the desktop
 profile. Zero failures.
