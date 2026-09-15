@@ -105,6 +105,20 @@ test.describe('the prompt entry', () => {
   })
 })
 
+test.describe("the Brief's own confidence", () => {
+  test('is still labelled confidence, and is a separate judgement', async ({ page }) => {
+    // The card grades the match; the Brief grades the reasoning. Renaming the
+    // card's label must not have reached into here and renamed this one too.
+    await stubApi(page)
+    await page.goto('#/example')
+    await expect(page.getByRole('heading', { name: /how far to trust/i }).first()).toBeVisible()
+
+    const main = page.locator('main')
+    await expect(main).toContainText(/\bconfidence\b/)
+    await expect(main).not.toContainText('match confidence')
+  })
+})
+
 test.describe('the portfolio selector', () => {
   test('shows the company name next to every ticker, grouped by category', async ({ page }) => {
     await stubApi(page)

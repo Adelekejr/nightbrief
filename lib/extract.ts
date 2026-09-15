@@ -12,6 +12,8 @@
  * the interface says the body was not retrieved.
  */
 
+import { checkArticleUrl, checkRedirect } from './urlsafety.js'
+
 export type Extraction =
   | { ok: true; text: string; chars: number; ms: number }
   | { ok: false; reason: string; ms: number }
@@ -76,21 +78,63 @@ export function paragraphsFrom(html: string, maxChars = 6000): string {
   return out
 }
 
+/**
+ * Redirects are followed by hand rather than by fetch, so that every hop can
+ * be put through the same gate the first URL was. Three is past what a real
+ * publisher needs and short of anything worth calling a chain.
+ */
+const MAX_REDIRECTS = 3
+
 export async function extractArticle(url: string, timeoutMs = 8000): Promise<Extraction> {
   const started = Date.now()
+
+  // Before anything is fetched. A URL the desk is not allowed to read is not a
+  // failure to report in detail — the caller gets the one sentence, and the
+  // Brief falls back to the feed's own summary exactly as it does for a
+  // publisher that blocked us.
+  const first = checkArticleUrl(url)
+  if (!first.ok) return { ok: false, reason: first.reason, ms: Date.now() - started }
+
   const controller = new AbortController()
   const timer = setTimeout(() => controller.abort(), timeoutMs)
 
   try {
-    const res = await fetch(url, {
+    // One deadline for the whole chain, not one per hop: the signal is shared,
+    // so following redirects cannot buy more time than a single fetch had.
+    let target = first.url
+    let res = await fetch(target, {
       signal: controller.signal,
-      redirect: 'follow',
+      redirect: 'manual',
       headers: {
         'user-agent':
           'Nightbrief/0.1 (research prototype; https://github.com/Adelekejr/nightbrief)',
         accept: 'text/html,application/xhtml+xml',
       },
     })
+
+    for (let hop = 0; res.status >= 300 && res.status < 400; hop++) {
+      const location = res.headers.get('location')
+      if (!location) {
+        return { ok: false, reason: 'publisher redirected without a destination', ms: Date.now() - started }
+      }
+      if (hop >= MAX_REDIRECTS) {
+        return { ok: false, reason: 'publisher redirected too many times', ms: Date.now() - started }
+      }
+
+      const next = checkRedirect(location, target)
+      if (!next.ok) return { ok: false, reason: next.reason, ms: Date.now() - started }
+
+      target = next.url
+      res = await fetch(target, {
+        signal: controller.signal,
+        redirect: 'manual',
+        headers: {
+          'user-agent':
+            'Nightbrief/0.1 (research prototype; https://github.com/Adelekejr/nightbrief)',
+          accept: 'text/html,application/xhtml+xml',
+        },
+      })
+    }
 
     if (!res.ok) return { ok: false, reason: `publisher returned ${res.status}`, ms: Date.now() - started }
 

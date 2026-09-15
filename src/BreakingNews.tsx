@@ -213,8 +213,19 @@ export default function BreakingNews(props: Props) {
           <span className="font-serif text-caption text-paper-mid">{word}</span>
         </span>
         <span className="flex items-baseline gap-2">
-          <Mono className="text-micro tracking-wide text-paper-low">confidence</Mono>
+          {/* "match confidence", not "confidence". This mark grades how
+              directly the story reaches the holding — the match layer — and a
+              Brief grades its reasoning separately, on its own chain links and
+              exposures. One bare word for both was the card claiming to have
+              judged something it never looked at. */}
+          <Mono className="text-micro tracking-wide text-paper-low">match confidence</Mono>
           <ConfidenceMark level={confidence} />
+          {/* Said in full to anyone listening rather than looking. The card
+              was cut down for height once already; this adds none. */}
+          <span className="sr-only">
+            Match confidence describes how directly the story reaches this
+            holding. The full Brief evaluates the reasoning separately.
+          </span>
         </span>
       </p>
 

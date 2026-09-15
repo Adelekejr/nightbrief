@@ -51,6 +51,11 @@ validator every Brief passes through, against the same real article the worked
 example uses. Five claims are removed and one figure struck from the prose, and
 the page shows the validator's own reasons for each.
 
+What that check establishes is **traceability, not truth**: that a claim
+presented as retrieved has a supplied source behind it, that a quote is
+verbatim, that a figure appears in an article. A well-sourced claim can still
+be wrong, and nothing here measures how often one is.
+
 ## Ground rules the code enforces
 
 - **No fabricated data.** A price, figure, date or quote that was not retrieved
@@ -173,7 +178,7 @@ is not one that only a ticker feed carried.
 | News feed | live, 8 of 9 sources answering, plus per-holding feeds |
 | rToken universe | 18 pairs, observed and dated |
 | Worked example | captured, served instantly |
-| Tests | 96, no test framework — Node's runner and type stripping |
+| Tests | 118, no test framework — Node's runner and type stripping |
 | Prices | live — closing price of the underlying share, dated |
 
 **What is real on screen.** Headlines, publishers, timestamps, links and
@@ -357,6 +362,30 @@ prefixed `VITE_` — anything so prefixed is shipped to the browser by Vite.
 The key is sent to Google in a request header rather than a query string, so it
 cannot be captured in a URL or access log.
 
+**The article fetch is bounded.** `/api/analyze` takes a URL and the server
+fetches it, which left open is a request-forgery primitive: a caller could aim
+the deployment's network position at anything it can reach, including addresses
+no outside client could. `lib/urlsafety.ts` is the gate. It requires `https:`
+exactly, refuses credentials in the authority and any non-default port, refuses
+loopback, private, carrier-grade-NAT, link-local and unique-local addresses in
+both IPv4 and IPv6 — including the mapped and hex spellings of them — and then
+requires the host to be a publisher this desk already reads. That list is
+derived from `lib/sources.ts` rather than typed out again, plus the two
+syndicators Yahoo's ticker feeds carry.
+
+Redirects are followed by hand rather than by `fetch`, so every hop goes
+through the same gate as the first URL, under the same single deadline. Every
+refusal returns one sentence — `article URL is not an allowed public HTTPS
+source` — because a caller that could tell a private address apart from an
+unlisted domain would be learning the shape of the network behind this.
+
+**What this costs.** A story from a publisher not on the list is no longer read
+in full. It still reaches the reader, and a Brief is still written — from the
+feed's own summary, with the body marked as not retrieved, which is the same
+path a publisher blocking the request has always taken. A Brief built from a
+headline reasons from less, so this is a real trade of depth for a bounded
+fetch, made deliberately.
+
 ## Validation report
 
 `#/validation` in the app, linked from the overnight desk and from every
@@ -407,7 +436,7 @@ never implies an understanding that is not there.
 ## Tests
 
 ```
-npm test           # 96 unit tests — the validator, matcher, selector, coverage, mark, universe, routing
+npm test           # 118 unit tests — the validator, matcher, selector, coverage, URL safety, mark, universe, routing
 npm run typecheck
 npm run build && npm run test:browser   # 99 checks × 2 device profiles = 198 runs
 ```
@@ -496,6 +525,35 @@ files in the output either way — which is the part that matters, since nothing
 fetching a social image will execute the app to get one. The browser checks
 fetch all three out of the served build and read their bytes, because a social
 image that 404s renders as a blank card rather than as an error.
+
+## Submission verification
+
+The current submission candidate is checked with:
+
+```bash
+npm ci
+npm run typecheck
+npm test
+npm run build
+```
+
+The public deployment was also checked manually for:
+
+- the overnight desk;
+- Breaking News;
+- the detailed Brief;
+- the validation report;
+- the adversarial checks;
+- the worked example.
+
+## License
+
+MIT. See [LICENSE](./LICENSE).
+
+The licence covers this repository's own source. It does not cover the
+webfonts, which are served by Google Fonts under their own terms, nor the
+articles, headlines and figures the desk retrieves — those remain their
+publishers'. Nightbrief quotes and links them; it does not relicense them.
 
 ## Stack
 

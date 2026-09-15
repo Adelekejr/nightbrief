@@ -197,7 +197,14 @@ test('the selected state is legible, not a tint', async ({ page }) => {
 test('the primary action carries more weight than the secondary', async ({ page }) => {
   await stubApi(page)
   await page.goto('#/')
-  await page.getByRole('button', { name: 'rNVDA' }).click()
+
+  // Wait for the selection to register before measuring. The landing screen
+  // fetches its own scan on load now, so under a parallel run the click can
+  // land before React has processed it — and the primary button's label only
+  // changes once it has.
+  const chip = page.getByRole('button', { name: 'rNVDA' })
+  await chip.click()
+  await expect(chip).toHaveAttribute('aria-pressed', 'true')
 
   const weight = async (name: RegExp) =>
     page.getByRole('button', { name }).evaluate((el) => {

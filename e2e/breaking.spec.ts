@@ -93,7 +93,7 @@ test.describe('the card', () => {
     await expect(it).toContainText('fact')
     await expect(it).toContainText(/named in the headline as .Intel./)
     await expect(it).toContainText('direction')
-    await expect(it).toContainText('confidence')
+    await expect(it).toContainText('match confidence')
     // Publisher and route, as the desk attributes them.
     await expect(it).toContainText('fool.com via Yahoo Finance')
   })
@@ -126,6 +126,27 @@ test.describe('the card', () => {
     // Whatever the direction, the rail is never the only thing carrying it.
     const rail = await card(page).evaluate((el) => getComputedStyle(el).borderLeftColor)
     expect(rail, 'the neutral rail is using the falsifier red').not.toMatch(/217,\s*97,\s*76/)
+  })
+
+  test('grades the match, and says so rather than saying "confidence"', async ({ page }) => {
+    await seeded(page)
+    await page.goto('#/overnight')
+    await settled(page, EVENT.title)
+
+    const it = card(page)
+    await expect(it).toContainText('match confidence')
+
+    // The bare word graded nothing a reader could name: this mark is about how
+    // directly the story reaches the holding, and a Brief grades its reasoning
+    // separately. A standalone "confidence" here claimed both.
+    const labels = await it.getByText(/^confidence$/).count()
+    expect(labels, 'the card still shows a bare "confidence" label').toBe(0)
+
+    // Said in full to anyone listening rather than looking.
+    await expect(
+      it.getByText(/Match confidence describes how directly the story reaches this holding/),
+    ).toBeAttached()
+    await expect(it).toContainText(/The full Brief evaluates the reasoning separately/)
   })
 
   test('never implies anything is being watched', async ({ page }) => {
