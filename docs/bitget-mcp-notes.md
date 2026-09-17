@@ -4,8 +4,9 @@
 `https://agent.bitget.com/mcp`. The three constraints below shaped the adapter
 in `lib/providers/bitget-mcp.ts` and the Market context block that reads it.
 
-One question from this phase is still open: whether a Vercel function can reach
-the endpoint at all. See *What is NOT established*.
+The one question left open by this phase — whether a Vercel function could
+reach the endpoint at all — was settled in production on 2026-09-17. See
+*Reaching it from Vercel*.
 
 ## Verdict
 
@@ -18,7 +19,7 @@ the endpoint at all. See *What is NOT established*.
 | **Payload carries its own timestamp** | **YES** — see below |
 | One-shot calls viable | **no** — a session is mandatory |
 | Rate limits published | none observed |
-| Confirmed from a Vercel function | **no** — the preview never answered; still open |
+| Confirmed from a Vercel function | **yes** — confirmed in production 2026-09-17 |
 
 ## The timestamp question
 
@@ -33,18 +34,39 @@ Verified: `1789672285619` → `2026-09-17T19:11:25.619Z`, matching `last_timesta
 to under a second. So the Phase 3 block **may state an observed time as well as
 a retrieval time**, and the two are independently checkable against each other.
 
-**But the quote is fifteen minutes old, and that is the finding that matters.**
+**But the quote is never current, and how stale it is depends on the clock.**
 
-| Run | Observed (`last_timestamp`) | Read at | Age |
-| --- | --- | --- | --- |
-| 1 | 19:11:25Z | 19:26:28Z | **15.0 min** |
-| 2 | 19:13:15Z | 19:28:14Z | **15.0 min** |
+| Run | Observed (`last_timestamp`) | Read at | Age | Market |
+| --- | --- | --- | --- | --- |
+| 1 | 19:11:25Z | 19:26:28Z | **15.0 min** | open |
+| 2 | 19:13:15Z | 19:28:14Z | **15.0 min** | open |
+| 3 | 20:04Z | 20:44Z | **40 min** | shut (closed 20:00Z) |
 
-Exactly fifteen minutes, twice, during US market hours — and the response names
-its own upstream: `extra_params.source: "iex"`. This is a standard IEX delayed
-feed. It is not a live quote, and the word "live" must not appear near it. It is
-also not "last close": it is an intraday price from a quarter of an hour ago,
-which is a third thing the interface does not currently have a label for.
+Runs 1 and 2 are the in-session case: exactly fifteen minutes, twice, and the
+response names its own upstream as `extra_params.source: "iex"` — a standard IEX
+delayed feed.
+
+Run 3 is the case that matters more here. It was read forty-four minutes after
+the 16:00 ET close, and the quote is from four minutes past it. Nothing is
+delaying that value any more; it is simply the last print of a session that has
+ended, and its age grows for as long as the market stays shut. By the middle of
+a Lagos evening it is hours old, and over a weekend it is days.
+
+**That is the normal case for this app, not the exception.** Nightbrief exists
+to be read while New York is shut, so a reader will usually meet a figure that
+is hours old rather than fifteen minutes old.
+
+Two consequences, both already true of the code:
+
+- The age is **computed per reading** from the payload's own timestamp, never
+  from a hard-coded fifteen minutes. Had the adapter assumed the constant, run 3
+  would have printed a lie.
+- `sourceType: 'delayed-intraday-quote'` is accurate in-session and loose once
+  the market shuts, where the value is closer to a close. It is an internal
+  discriminator and is not shown to a reader, so it misleads nobody today — but
+  it would need splitting before anything renders it.
+
+It is not a live quote, and the word "live" must not appear near it.
 
 **Do not use `extra.metadata.timestamp`.** It reads `2026-09-18T03:26:28.465836`
 — no timezone marker, and eight hours ahead of the UTC wall clock. It is the
@@ -167,32 +189,32 @@ and a Phase 2 adapter should drop the field rather than pass it along.
   `retry-after`. The budget is unpublished, which means it is unknown rather
   than generous — Phase 2 should cache and back off as if it were tight.
 
-## What is NOT established
+## Reaching it from Vercel
 
-**That a Vercel function can reach it.** The probe ran from a GitHub Actions
-runner, because the machine doing this work is behind an outbound allowlist that
-refuses both `bitget.com` and `*.vercel.app`. A runner is a different network on
-different IPs, and `agent.bitget.com` is behind Cloudflare — this repository
-already lost Stooq to a datacentre-IP refusal, so the substitution is not safe
-to wave through.
+**Settled: yes.** This was the one question Phase 1 could not answer. The probe
+had run from a GitHub Actions runner, which is a different network on different
+IPs, and `agent.bitget.com` sits behind Cloudflare — the same combination that
+cost this project Stooq, which answers a datacentre IP with a browser
+verification page. The preview route built for the verdict never served, so the
+question outlived the branch.
 
-A preview-only route was built and deployed for that verdict. It never
-answered — the deploy created the project but the deployment itself did not
-serve, and the URL returned 404. The route and the throwaway Vercel projects
-have since been removed, so **the question is still open and there is no
-artefact left that would answer it.**
+Production answered it on 2026-09-17, on the first Brief opened after the merge:
 
-It is cheap to settle whenever someone wants to: deploy any branch carrying
-`scripts/probe-bitget-mcp.mjs` to a Vercel preview and run it from there, or
-watch `/api/market-context` on a preview deployment. `ok: true` with a price is
-the whole answer.
+```
+NVDA  218.98  +2.4% on the previous close
+The US-listed share behind rNVDA.
+Observed 40 minutes before it was read.
+via Bitget, sourced from IEX
+observed 20:04 UTC · read 20:44 UTC
+```
 
-Until then the adapter is built for a provider that may refuse a datacentre IP,
-and that is not a guess about a thing that will probably be fine — it is the
-specific way this project already lost Stooq. If it does refuse, the failure is
-typed and rendered rather than thrown, so a Brief degrades to the last close
-from Yahoo with the market-context block saying plainly that Bitget did not
-answer. Nothing else in the app changes.
+A Vercel function reaches the endpoint, completes the handshake, executes
+`equity_price_quote` and gets a real value back. Cloudflare does not refuse
+Vercel's IPs the way it refused Stooq's caller.
+
+Re-check it any time at `/api/market-context?holding=rNVDA`. `ok: true` with a
+price is the whole answer; `ok: false` naming Bitget means the door has closed
+since, and the block degrades to saying so with Yahoo's last close below it.
 
 ## What Phase 2 has to absorb
 
