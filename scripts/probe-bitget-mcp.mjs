@@ -51,6 +51,8 @@ const findings = {
   tools: [],
   sample: null,
   catalog: { root: null, categories: [] },
+  payloadCarriesTimestamp: 'unknown',
+  timestampEvidence: null,
   notes: [],
 }
 
@@ -196,24 +198,113 @@ function truncate(text, n) {
  */
 function categoriesIn(text) {
   if (!text) return []
-  const trimmed = text.trim()
-  if (trimmed.startsWith('{') || trimmed.startsWith('[')) {
-    try {
-      const parsed = JSON.parse(trimmed)
-      const list = Array.isArray(parsed) ? parsed : (parsed.categories ?? parsed.data ?? [])
-      return list
-        .map((c) => (typeof c === 'string' ? c : (c?.category ?? c?.name ?? c?.id)))
-        .filter((c) => typeof c === 'string')
-    } catch {
-      /* fall through to the line reader */
+  try {
+    const parsed = JSON.parse(text.trim())
+    const list = parsed.categories ?? parsed.data ?? []
+    return list
+      .map((c) => ({ key: c?.key ?? c?.id ?? c?.name, label: c?.name ?? c?.key ?? '' }))
+      .filter((c) => typeof c.key === 'string')
+  } catch {
+    return []
+  }
+}
+
+/** The entry list inside one category's reply. */
+function entriesIn(text) {
+  if (!text) return []
+  try {
+    const parsed = JSON.parse(text.trim())
+    const list = parsed.entries ?? parsed.data ?? []
+    return Array.isArray(list) ? list : []
+  } catch {
+    return []
+  }
+}
+
+/**
+ * Rank catalog entries for "the latest price of one US-listed share".
+ *
+ * Descriptions arrive in Chinese, so the tokens are matched in both languages:
+ * 行情 is market data, 报价 a quote, 实时 real-time, 最新 latest, 价格 price.
+ * Anything that writes still scores below zero, in either language.
+ */
+function rankEntries(entries) {
+  const score = (e) => {
+    const text = `${e?.id ?? ''} ${e?.name ?? ''} ${e?.description ?? ''}`.toLowerCase()
+    let n = 0
+    if (/quote|price|last|close|realtime|real_time|snapshot/.test(text)) n += 3
+    if (/行情|报价|价格|实时|最新|收盘/.test(text)) n += 3
+    if (/stock|equity|share/.test(text)) n += 2
+    if (/profile|company|info|overview|fundamental/.test(text)) n += 1
+    if (/基本面|公司|简介/.test(text)) n += 1
+    if (/order|withdraw|transfer|balance|position|trade/.test(text)) n -= 10
+    if (/下单|提币|划转|持仓|交易/.test(text)) n -= 10
+    return n
+  }
+  return entries
+    .map((entry) => ({ entry, score: score(entry) }))
+    .filter((r) => r.score > 0)
+    .sort((a, b) => b.score - a.score)
+    .map((r) => r.entry)
+}
+
+/** Build params from the entry's own declared parameters where it has them. */
+function paramsFor(entry, ticker) {
+  const declared = entry?.params ?? entry?.parameters ?? entry?.inputSchema?.properties ?? null
+  const params = {}
+  if (declared && typeof declared === 'object') {
+    const keys = Array.isArray(declared)
+      ? declared.map((d) => d?.name ?? d?.key).filter(Boolean)
+      : Object.keys(declared)
+    for (const key of keys) {
+      if (/symbol|ticker|code|stock|instrument/i.test(key)) params[key] = ticker
     }
   }
-  const out = []
-  for (const line of trimmed.split('\n')) {
-    const m = line.match(/^[\s\-*•]*([A-Za-z][A-Za-z0-9_\- ]{2,40})(?::|\s{2,}|$)/)
-    if (m) out.push(m[1].trim())
+  if (!Object.keys(params).length) params.symbol = ticker
+  return params
+}
+
+
+/**
+ * Does the value arrive with a time of its own, or only the time we asked?
+ * Checks the value and not just the key — a field named `ts` holding 214.32 is
+ * a price, not a time.
+ */
+function findTimestamp(text) {
+  if (!text) return null
+  const TIME_KEY = /time|ts|timestamp|date|updated|asof|as_of/i
+  let parsed
+  try {
+    parsed = JSON.parse(text.trim())
+  } catch {
+    return null
   }
-  return [...new Set(out)]
+  const seen = new Set()
+  const walk = (node) => {
+    if (!node || typeof node !== 'object' || seen.has(node)) return null
+    seen.add(node)
+    if (Array.isArray(node)) {
+      for (const item of node) {
+        const hit = walk(item)
+        if (hit) return hit
+      }
+      return null
+    }
+    for (const [key, value] of Object.entries(node)) {
+      if (!TIME_KEY.test(key)) continue
+      if (typeof value === 'string' && /\d{4}-\d{2}-\d{2}|\d{10}/.test(value)) return `${key}=${value}`
+      if (typeof value === 'number') {
+        const ms = value > 1e12 ? value : value * 1000
+        if (ms > 1_000_000_000_000 && ms < 2_500_000_000_000) return `${key}=${value}`
+      }
+    }
+    for (const value of Object.values(node)) {
+      const hit = walk(value)
+      if (hit) return hit
+    }
+    return null
+  }
+  return walk(parsed)
 }
 
 /** JSON, or the last `data:` frame of an SSE stream. */
@@ -327,22 +418,64 @@ async function main() {
   if (hasGuide) {
     log('3. guide {} — categories')
     const top = await rpc('tools/call', { name: 'guide', arguments: {} })
-    if (top.ok) {
-      findings.catalog.root = textOf(top.result)
-      log(truncate(findings.catalog.root, 1200))
-
-      // Drill one level into every category named, bounded so a large catalog
-      // cannot run the probe past its budget.
-      for (const category of categoriesIn(findings.catalog.root).slice(0, 12)) {
-        const entries = await rpc('tools/call', { name: 'guide', arguments: { category } })
-        if (!entries.ok) continue
-        const text = textOf(entries.result)
-        findings.catalog.categories.push({ category, text })
-        log(`\n   — ${category}\n${truncate(text, 900)}`)
-      }
-    } else {
+    if (!top.ok) {
       findings.notes.push('guide is listed but did not answer')
+      return report()
     }
+
+    findings.catalog.root = textOf(top.result)
+    log(truncate(findings.catalog.root, 1400))
+
+    // Address a category by its `key`, never its `name`. The names come back
+    // localised — 美股 for US equities — and a localised label is not an
+    // identifier. Asking by name returns an empty entry list rather than an
+    // error, which is the kind of quiet nothing that gets mistaken for "the
+    // catalog is empty".
+    for (const { key, label } of categoriesIn(findings.catalog.root).slice(0, 12)) {
+      const listed = await rpc('tools/call', { name: 'guide', arguments: { category: key } })
+      if (!listed.ok) continue
+      const text = textOf(listed.result)
+      const entries = entriesIn(text)
+      findings.catalog.categories.push({ key, label, count: entries.length, text })
+      log(`\n   — ${key} (${label}) · ${entries.length} entries`)
+      log(truncate(text, 2000))
+    }
+
+    // 3b — execute the most quote-like entry in the US equity category.
+    if (hasQuery) {
+      const equity = findings.catalog.categories.find((c) => c.key === 'equity')
+      const pool = equity ? entriesIn(equity.text) : []
+      for (const entry of rankEntries(pool).slice(0, 3)) {
+        const id = entry.id ?? entry.entry_id ?? entry.key
+        if (!id) continue
+        const params = paramsFor(entry, TICKER)
+        log(`\n3b. do_query ${id} ${JSON.stringify(params)}`)
+        const call = await rpc('tools/call', {
+          name: 'do_query',
+          arguments: { entry_id: id, params },
+        })
+        if (!call.ok) {
+          log(`    failed · ${call.step.reason ?? call.step.status}`)
+          continue
+        }
+        const text = textOf(call.result)
+        findings.sample = { entry_id: id, params, ms: call.step.ms, text }
+        log(truncate(text, 2000))
+
+        const stamped = findTimestamp(text)
+        findings.payloadCarriesTimestamp = stamped ? 'yes' : 'no'
+        findings.timestampEvidence = stamped
+        findings.notes.push(
+          stamped
+            ? `payload carries its own time: ${stamped} — an observed time can be printed beside the retrieval time`
+            : 'payload carries NO time of its own — the Phase 3 block may state a retrieval time only, and nothing may be called live',
+        )
+        break
+      }
+      if (!findings.sample) findings.notes.push(`no equity entry answered for ${TICKER}`)
+    }
+
+    return report()
   }
 
   // 4 — one real call, for a real response shape
@@ -397,7 +530,8 @@ function report() {
   log(`reachable:  ${findings.reachable}`)
   log(`session:    ${findings.sessionId ?? 'none issued'}`)
   log(`tools:      ${findings.tools.length}`)
-  log(`sample:     ${findings.sample ? findings.sample.tool : 'none captured'}`)
+  log(`sample:     ${findings.sample ? (findings.sample.entry_id ?? findings.sample.tool) : 'none captured'}`)
+  log(`timestamp:  ${findings.payloadCarriesTimestamp}  ${findings.timestampEvidence ?? ''}`)
   for (const n of findings.notes) log(`note:       ${n}`)
   log('\nsteps:')
   for (const s of findings.steps) {
