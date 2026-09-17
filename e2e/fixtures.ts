@@ -154,6 +154,48 @@ export const CHECKS = {
   },
 }
 
+
+/**
+ * Market context as the adapter really composes it — the freshness sentence
+ * and the attribution string are server-side strings, so the fixture carries
+ * them verbatim rather than letting a test invent friendlier wording.
+ */
+export const MARKET_CONTEXT = {
+  ok: true,
+  holding: 'rNVDA',
+  name: 'NVIDIA',
+  underlying: 'NVDA',
+  price: 187.42,
+  previousClose: 184.9,
+  freshness: 'Observed 15 minutes before it was read.',
+  provenance: {
+    servedBy: 'Bitget',
+    tool: 'do_query',
+    entryId: 'equity_price_quote',
+    origin: 'iex',
+    relay: 'massive',
+    attribution: 'via Bitget, sourced from IEX',
+    retrievedAt: '2026-09-17T19:26:28.000Z',
+    observedAt: '2026-09-17T19:11:25.619Z',
+    delaySeconds: 902,
+    sourceType: 'delayed-intraday-quote',
+    doesNotEstablish:
+      'This is the underlying US-listed share. It does not establish the rToken\u2019s price, ' +
+      'its direction, or the outcome of any trade.',
+  },
+}
+
+/** The provider answered and could not serve it. Still a rendered state. */
+export const MARKET_CONTEXT_DOWN = {
+  ok: false,
+  holding: 'rNVDA',
+  name: 'NVIDIA',
+  underlying: 'NVDA',
+  reason: 'Bitget market data was not available',
+  servedBy: 'Bitget',
+  attemptedAt: '2026-09-17T19:26:28.000Z',
+}
+
 /**
  * Serves the interface's dependencies deterministically. Nothing here reaches
  * the network, so a failing test means the interface is wrong rather than that
@@ -164,6 +206,7 @@ export async function stubApi(page: Page, overrides: Record<string, unknown> = {
     '**/api/universe*': UNIVERSE,
     '**/api/prices*': { ok: true, fetchedAt: new Date().toISOString(), closes: [], unavailable: [] },
     '**/api/checks*': CHECKS,
+    '**/api/market-context*': MARKET_CONTEXT,
     '**/api/feed*': {
       fetchedAt: new Date().toISOString(),
       marketNow: OVERNIGHT.marketNow,

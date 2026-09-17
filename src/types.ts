@@ -123,3 +123,47 @@ export type PricesResponse = {
   closes: Close[]
   unavailable: Array<{ ticker: string; symbol?: string; reason: string }>
 }
+
+/**
+ * Market context for one holding: the last quote of the US-listed share,
+ * with the chain it travelled and what it does not settle.
+ *
+ * `observedAt` is the payload's own time for the value and may be null; it is
+ * never the time we asked. `sourceType` is deliberately neither "close" nor
+ * "live" — the value measured a consistent fifteen-minute IEX delay, which is
+ * a third thing.
+ */
+export type MarketProvenance = {
+  servedBy: 'Bitget'
+  tool: 'do_query'
+  entryId: string
+  origin: string | null
+  relay: string | null
+  attribution: string
+  retrievedAt: string
+  observedAt: string | null
+  delaySeconds: number | null
+  sourceType: 'delayed-intraday-quote' | 'undated-quote'
+  doesNotEstablish: string
+}
+
+export type MarketContextResponse =
+  | {
+      ok: true
+      holding: string
+      name: string
+      underlying: string
+      price: number
+      previousClose: number | null
+      freshness: string
+      provenance: MarketProvenance
+    }
+  | {
+      ok: false
+      holding?: string
+      name?: string
+      underlying?: string
+      reason: string
+      servedBy?: 'Bitget'
+      attemptedAt?: string
+    }

@@ -1,5 +1,6 @@
 import { Marker, StageRail, StageSection } from './Chain'
 import Closes from './Closes'
+import MarketContext from './MarketContext'
 import type { AnalysisResponse } from './types'
 import { ago, ConfidenceLegend } from './states'
 import { ConfidenceMark, Mono, SampleStamp, SensitivityMark, SourceChip, TimeStamp } from './ui'
@@ -18,6 +19,16 @@ export default function BriefView({ data }: { data: AnalysisResponse }) {
   const untouched = data.holdings.verified.filter(
     (h) => !brief.exposures.some((e) => e.symbol === h.symbol),
   )
+
+  /**
+   * The one holding the market-context block is fetched for.
+   *
+   * The holding this chain actually reaches, not the first one the reader
+   * happened to name — and exactly one of them. A Brief can reach several, and
+   * a block per exposure would turn one page view into six calls against a
+   * provider that publishes no rate ceiling.
+   */
+  const contextHolding = brief.exposures[0]?.symbol ?? data.holdings.verified[0]?.symbol ?? null
 
   return (
     <article className="pb-16">
@@ -155,6 +166,12 @@ export default function BriefView({ data }: { data: AnalysisResponse }) {
           </p>
         )}
       </StageSection>
+
+      {/* ---- market context --------------------------------------------
+          After the evidence and before the chain, because it is a reading of
+          the market rather than a step in the argument. Placing it inside the
+          chain would make a delayed quote look like a link in the reasoning. */}
+      <MarketContext holding={contextHolding} />
 
       {/* ---- 03 transmission -------------------------------------------- */}
       <StageSection
