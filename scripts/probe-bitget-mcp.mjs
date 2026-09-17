@@ -51,6 +51,7 @@ const findings = {
   tools: [],
   sample: null,
   catalog: { root: null, categories: [] },
+  oneShotViable: null,
   payloadCarriesTimestamp: 'unknown',
   timestampEvidence: null,
   notes: [],
@@ -473,6 +474,22 @@ async function main() {
         break
       }
       if (!findings.sample) findings.notes.push(`no equity entry answered for ${TICKER}`)
+    }
+
+    // 3c — a serverless function has nowhere to keep a session between
+    // invocations, so whether a call without one is refused decides whether
+    // each Brief costs one round trip or two.
+    if (findings.sessionId) {
+      const held = findings.sessionId
+      findings.sessionId = null
+      const cold = await rpc('tools/list', {})
+      findings.oneShotViable = cold.ok
+      findings.notes.push(
+        cold.ok
+          ? 'a call without the session id still answered — one-shot use is viable from a serverless function'
+          : 'a call without the session id was refused — every invocation must re-handshake, two round trips per Brief',
+      )
+      findings.sessionId = held
     }
 
     return report()
