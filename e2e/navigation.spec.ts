@@ -121,8 +121,17 @@ test.describe('the first run', () => {
       '#/nonsense',
     ]) {
       await page.goto(hash)
-      const text = ((await page.locator('main').innerText()) ?? '').trim()
-      expect(text.length, `${hash} rendered nothing`).toBeGreaterThan(40)
+      // Retried rather than read once. A route that fetches on mount renders
+      // an empty main for the frame between mount and its first effect, so a
+      // single instantaneous read was racing that frame and passing only
+      // because it usually won. The claim being made here is that the route
+      // renders something, not that it has already rendered by the time
+      // `goto` returns.
+      await expect
+        .poll(async () => ((await page.locator('main').innerText()) ?? '').trim().length, {
+          message: `${hash} rendered nothing`,
+        })
+        .toBeGreaterThan(40)
     }
   })
 })

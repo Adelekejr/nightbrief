@@ -208,6 +208,7 @@ measure and was treated as a closed door, not something to work around.
 | `/api/analyze` | POST an item and holdings. `GET ?demo=1` runs the worked example live. |
 | `/api/models` | ListModels. `?generate=1` proves the key can actually generate. |
 | `/api/prices` | Last close of the underlying shares, dated and attributed. |
+| `/api/market-context` | One holding's underlying quote, on demand. Delayed, dated, and attributed to IEX via Bitget. |
 | `/api/checks` | Runs a deliberately corrupted output through the real validator. |
 | `/api/health` | Whether the key is configured, as a boolean only. |
 
@@ -304,6 +305,29 @@ both caveats next to the numbers rather than in a footnote.
 Stooq was tried first and refused: it answers a datacentre IP with a JavaScript
 browser-verification page. That is an explicit anti-automation measure, and it
 was treated as a closed door rather than something to work around.
+
+**Market context — delayed, dated, and attributed to its origin.** A Brief can
+also show where the underlying share was trading, from Bitget's keyless agent
+MCP endpoint. Three things about it were measured rather than assumed, and all
+three are enforced in `lib/providers/bitget-mcp.ts` rather than left to whoever
+writes the interface:
+
+- **It is delayed by about fifteen minutes.** Measured twice at exactly that,
+  during market hours, and the payload names its own upstream as IEX. So the
+  words "live" and "real-time" appear nowhere on that path, and the sentence
+  stating the value's age is composed from the payload's own timestamp — never
+  from the time we asked.
+- **Bitget is not the source.** The payload carries `provider: "massive"` and
+  `source: "iex"`; Bitget served it. Attribution follows the same rule as
+  syndicated news: `via Bitget, sourced from IEX`.
+- **A session is mandatory**, so each cold call costs a handshake and then the
+  query. The timeout budget is built for two round trips.
+
+It is fetched for one holding, when a Brief is opened — never for the whole
+portfolio and never on page load. Yahoo still serves the last close, separately
+and labelled as such; a Bitget outage renders as a Bitget outage and never as
+Yahoo's number under Bitget's name. The probe that established all of this, and
+its findings, are in `docs/bitget-mcp-notes.md`.
 
 **Tokenized universe — observed, dated, partial.** Eighteen Bitget rToken pairs,
 read off the Bitget app's "Spot stocks" tab on 2026-09-08. Prices were visible
