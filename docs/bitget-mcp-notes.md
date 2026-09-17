@@ -1,7 +1,11 @@
 # Bitget agent MCP — Phase 1 findings
 
-**Status: viable. Phase 2 may proceed, with three constraints that change its
-design.** Probed 2026-09-17 against `https://agent.bitget.com/mcp`.
+**Status: viable, and built on.** Probed 2026-09-17 against
+`https://agent.bitget.com/mcp`. The three constraints below shaped the adapter
+in `lib/providers/bitget-mcp.ts` and the Market context block that reads it.
+
+One question from this phase is still open: whether a Vercel function can reach
+the endpoint at all. See *What is NOT established*.
 
 ## Verdict
 
@@ -14,7 +18,7 @@ design.** Probed 2026-09-17 against `https://agent.bitget.com/mcp`.
 | **Payload carries its own timestamp** | **YES** — see below |
 | One-shot calls viable | **no** — a session is mandatory |
 | Rate limits published | none observed |
-| Confirmed from a Vercel function | **not yet** — deployed, unread |
+| Confirmed from a Vercel function | **no** — the preview never answered; still open |
 
 ## The timestamp question
 
@@ -172,13 +176,23 @@ different IPs, and `agent.bitget.com` is behind Cloudflare — this repository
 already lost Stooq to a datacentre-IP refusal, so the substitution is not safe
 to wave through.
 
-A preview-only route exists for that verdict and is deployed. Opening it is the
-remaining Phase 1 step:
+A preview-only route was built and deployed for that verdict. It never
+answered — the deploy created the project but the deployment itself did not
+serve, and the URL returned 404. The route and the throwaway Vercel projects
+have since been removed, so **the question is still open and there is no
+artefact left that would answer it.**
 
-    https://nightbrief-probe-phase1-adelekejrhammed-5250.vercel.app/api/probe
+It is cheap to settle whenever someone wants to: deploy any branch carrying
+`scripts/probe-bitget-mcp.mjs` to a Vercel preview and run it from there, or
+watch `/api/market-context` on a preview deployment. `ok: true` with a price is
+the whole answer.
 
-It answers with the same JSON shape as the script. `reachable: true` plus a
-non-null `sample` closes the question.
+Until then the adapter is built for a provider that may refuse a datacentre IP,
+and that is not a guess about a thing that will probably be fine — it is the
+specific way this project already lost Stooq. If it does refuse, the failure is
+typed and rendered rather than thrown, so a Brief degrades to the last close
+from Yahoo with the market-context block saying plainly that Bitget did not
+answer. Nothing else in the app changes.
 
 ## What Phase 2 has to absorb
 
@@ -205,14 +219,18 @@ node scripts/probe-bitget-mcp.mjs --ticker MSFT
 Node 18+, no dependencies, no key. It never throws — a refusal is a result, and
 the body of the refusal is printed.
 
-## Temporary artefacts to remove before merge
+## Temporary artefacts, removed
 
-Three things on this branch exist for Phase 1 only and must not reach `main`:
+Phase 1 needed three things that had no business reaching `main`, and all three
+are gone:
 
-- `api/probe-bitget.ts` — the preview route (404s on production, but delete it
-  rather than rely on the gate)
+- `api/probe-bitget.ts` — the preview-only route
 - `.github/workflows/bitget-probe.yml` — the branch-scoped probe workflow
-- the two throwaway Vercel projects, `nightbrief-bitget-probe` and
+- the throwaway Vercel projects `nightbrief-bitget-probe` and
   `nightbrief-probe-phase1`
 
-`scripts/probe-bitget-mcp.mjs` and this file are the ones worth keeping.
+What remains is `scripts/probe-bitget-mcp.mjs`, this file, and the recorded
+payload at `tests/fixtures/bitget-equity-price-quote-AAPL.json`. The script has
+no dependencies, is imported by nothing, and does not ship in the bundle; it is
+kept because the next person to ask whether this endpoint still behaves the way
+it did needs the probe rather than a description of one.
