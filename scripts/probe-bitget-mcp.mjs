@@ -50,6 +50,7 @@ const findings = {
   serverInfo: null,
   tools: [],
   sample: null,
+  catalog: { root: null, categories: [] },
   notes: [],
 }
 
@@ -174,6 +175,47 @@ async function rpc(method, params, { notification = false } = {}) {
   }
 }
 
+
+/** MCP results carry their payload in text content blocks. */
+function textOf(result) {
+  const blocks = result?.content ?? []
+  return blocks
+    .map((b) => (typeof b?.text === 'string' ? b.text : JSON.stringify(b)))
+    .join('\n')
+}
+
+function truncate(text, n) {
+  if (!text) return '(empty)'
+  return text.length > n ? `${text.slice(0, n)}\n   … ${text.length - n} more chars` : text
+}
+
+/**
+ * Category names out of whatever shape `guide` answers in — JSON if it is
+ * JSON, otherwise the leading token of each line. The catalog's format is one
+ * of the things being discovered, so this stays deliberately forgiving.
+ */
+function categoriesIn(text) {
+  if (!text) return []
+  const trimmed = text.trim()
+  if (trimmed.startsWith('{') || trimmed.startsWith('[')) {
+    try {
+      const parsed = JSON.parse(trimmed)
+      const list = Array.isArray(parsed) ? parsed : (parsed.categories ?? parsed.data ?? [])
+      return list
+        .map((c) => (typeof c === 'string' ? c : (c?.category ?? c?.name ?? c?.id)))
+        .filter((c) => typeof c === 'string')
+    } catch {
+      /* fall through to the line reader */
+    }
+  }
+  const out = []
+  for (const line of trimmed.split('\n')) {
+    const m = line.match(/^[\s\-*•]*([A-Za-z][A-Za-z0-9_\- ]{2,40})(?::|\s{2,}|$)/)
+    if (m) out.push(m[1].trim())
+  }
+  return [...new Set(out)]
+}
+
 /** JSON, or the last `data:` frame of an SSE stream. */
 function parseBody(raw, contentType) {
   if (contentType.includes('text/event-stream')) {
@@ -270,7 +312,40 @@ async function main() {
   log(`   ok · ${list.step.ms}ms · ${findings.tools.length} tools`)
   for (const t of findings.tools) log(`     - ${t.name}`)
 
-  // 3 — one real call, for a real response shape
+  // 3 — the catalog, when the server is one.
+  //
+  // Bitget does not publish named tools like `get_stock_quote`. It publishes
+  // two: `guide`, which lists data categories and the entries inside them, and
+  // `do_query`, which executes an entry by id. So there is nothing for a
+  // name-ranker to find, and the only way to learn what is on offer is to walk
+  // the catalog. Assuming tool names from documentation would have missed this
+  // entirely — the documentation describes a surface that is not what the
+  // server serves.
+  const hasGuide = findings.tools.some((t) => t.name === 'guide')
+  const hasQuery = findings.tools.some((t) => t.name === 'do_query')
+
+  if (hasGuide) {
+    log('3. guide {} — categories')
+    const top = await rpc('tools/call', { name: 'guide', arguments: {} })
+    if (top.ok) {
+      findings.catalog.root = textOf(top.result)
+      log(truncate(findings.catalog.root, 1200))
+
+      // Drill one level into every category named, bounded so a large catalog
+      // cannot run the probe past its budget.
+      for (const category of categoriesIn(findings.catalog.root).slice(0, 12)) {
+        const entries = await rpc('tools/call', { name: 'guide', arguments: { category } })
+        if (!entries.ok) continue
+        const text = textOf(entries.result)
+        findings.catalog.categories.push({ category, text })
+        log(`\n   — ${category}\n${truncate(text, 900)}`)
+      }
+    } else {
+      findings.notes.push('guide is listed but did not answer')
+    }
+  }
+
+  // 4 — one real call, for a real response shape
   const candidates = rankQuoteTools(findings.tools)
   if (!candidates.length) {
     findings.notes.push(
