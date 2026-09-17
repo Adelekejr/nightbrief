@@ -21,9 +21,9 @@ import type { VercelRequest, VercelResponse } from '@vercel/node'
  *
  *   1. 404 on production, indistinguishable from a route that does not exist.
  *   2. `no-store` and `noindex`, so nothing caches or lists it.
- *   3. Read-only by construction — any tool whose name or description suggests
- *      an order, a transfer or an account operation scores below zero in the
- *      ranking and is never called.
+ *   3. Read-only by construction — the only entry it ever executes is the
+ *      hard-coded `equity_price_quote`. There is no ranking to go wrong and no
+ *      path by which a writing entry could be selected.
  */
 
 const ENDPOINT = 'https://agent.bitget.com/mcp'
@@ -58,6 +58,8 @@ type Findings = {
   serverInfo: unknown
   tools: { name: string; description: string | null; inputSchema: unknown }[]
   sample: unknown
+  catalogRoot: string | null
+  equityEntries: string | null
   payloadCarriesTimestamp: 'yes' | 'no' | 'unknown'
   timestampEvidence: string | null
   notes: string[]
@@ -86,6 +88,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     serverInfo: null,
     tools: [],
     sample: null,
+    catalogRoot: null,
+    equityEntries: null,
     payloadCarriesTimestamp: 'unknown',
     timestampEvidence: null,
     notes: [],
@@ -230,25 +234,36 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     inputSchema: t.inputSchema ?? null,
   }))
 
-  for (const tool of rankQuoteTools(findings.tools).slice(0, 3)) {
-    const args = argsFor(tool, ticker)
-    const call = await rpc('tools/call', { name: tool.name, arguments: args })
-    if (call.ok) {
-      findings.sample = { tool: tool.name, arguments: args, ms: call.step.ms, result: call.result }
-      const stamped = findTimestamp(call.result)
-      findings.payloadCarriesTimestamp = stamped ? 'yes' : 'no'
-      findings.timestampEvidence = stamped
-      findings.notes.push(
-        stamped
-          ? `payload carries its own time: ${stamped} — an observed time can be printed alongside the retrieval time`
-          : 'payload carries NO time of its own — the Phase 3 block may state a retrieval time only, and nothing may be called live',
-      )
-      break
-    }
+  // Bitget publishes two tools — `guide`, which lists data categories and the
+  // entries inside them, and `do_query`, which executes an entry by id. There
+  // are no named quote tools to rank, so the catalog has to be walked. Note
+  // that a category is addressed by its `key`: the `name` comes back localised
+  // (美股 for US equities) and asking by it returns an empty list rather than
+  // an error.
+  const guided = await rpc('tools/call', { name: 'guide', arguments: {} })
+  if (guided.ok) {
+    findings.catalogRoot = textOf(guided.result)
+    const equity = await rpc('tools/call', { name: 'guide', arguments: { category: 'equity' } })
+    if (equity.ok) findings.equityEntries = textOf(equity.result)
   }
 
-  if (!findings.sample) {
-    findings.notes.push(`no candidate quote tool answered for ${ticker}`)
+  const call = await rpc('tools/call', {
+    name: 'do_query',
+    arguments: { entry_id: 'equity_price_quote', params: { symbol: ticker } },
+  })
+  if (call.ok) {
+    const text = textOf(call.result)
+    findings.sample = { entry_id: 'equity_price_quote', params: { symbol: ticker }, ms: call.step.ms, text }
+    const stamped = findTimestamp(text)
+    findings.payloadCarriesTimestamp = stamped ? 'yes' : 'no'
+    findings.timestampEvidence = stamped
+    findings.notes.push(
+      stamped
+        ? `payload carries its own time: ${stamped}`
+        : 'payload carries NO time of its own — a retrieval time is all the block may state',
+    )
+  } else {
+    findings.notes.push(`equity_price_quote did not answer for ${ticker}`)
   }
 
   // Does a cold call work? A serverless function has nowhere to keep a session
@@ -353,31 +368,10 @@ function findTimestamp(result: unknown): string | null {
   return walk(result)
 }
 
-/** Discover, never assume — and never call anything that writes. */
-function rankQuoteTools(tools: { name: string; description: string | null }[]) {
-  const score = (t: { name: string; description: string | null }) => {
-    const text = `${t.name} ${t.description ?? ''}`.toLowerCase()
-    let n = 0
-    if (/quote|price|ticker|last|close/.test(text)) n += 3
-    if (/stock|equity|share|us/.test(text)) n += 2
-    if (/symbol|search|lookup|info|profile|company/.test(text)) n += 1
-    if (/order|withdraw|transfer|account|balance|trade|position/.test(text)) n -= 10
-    return n
-  }
-  return tools
-    .map((tool) => ({ tool, score: score(tool) }))
-    .filter((r) => r.score > 0)
-    .sort((a, b) => b.score - a.score)
-    .map((r) => r.tool)
-}
-
-function argsFor(tool: any, ticker: string) {
-  const props = tool.inputSchema?.properties ?? {}
-  const args: Record<string, unknown> = {}
-  for (const [key, spec] of Object.entries<any>(props)) {
-    const k = key.toLowerCase()
-    if (/symbol|ticker|code|instrument|pair|query|keyword/.test(k)) args[key] = ticker
-    else if (/market|type|category/.test(k) && spec?.enum?.length) args[key] = spec.enum[0]
-  }
-  return args
+/** MCP results carry their payload in text content blocks. */
+function textOf(result: any): string {
+  const blocks = result?.content ?? []
+  return blocks
+    .map((b: any) => (typeof b?.text === 'string' ? b.text : JSON.stringify(b)))
+    .join('\n')
 }
