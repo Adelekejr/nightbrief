@@ -145,6 +145,22 @@ export function attributionFor(origin: string | null, relay: string | null): str
  * there is no branch that produces the word. When the payload carried no time
  * of its own, it says so rather than substituting the retrieval time, because
  * the time we asked is not the time the market printed.
+ *
+ * The unit scales, because minutes stop being prose long before this value
+ * stops growing. An overnight reading printed "Observed 704 minutes before it
+ * was read" — arithmetically right and unreadable — and a Monday morning after
+ * a long weekend would have reached five figures.
+ *
+ *   under 90 minutes   minutes, whole        "Observed 42 minutes"
+ *   under 48 hours     hours, one decimal    "Observed 11.7 hours"
+ *   beyond             days, one decimal     "Observed 2.7 days"
+ *
+ * The thresholds are read off the ROUNDED value at each step, not the raw
+ * seconds, so no reading can land on "90 minutes" or "48.0 hours" — the awkward
+ * edge each boundary exists to avoid.
+ *
+ * `delaySeconds` on the record is untouched and stays exact. This is the
+ * human-readable string and nothing computes from it.
  */
 export function freshness(provenance: BitgetProvenance): string {
   const { delaySeconds } = provenance
@@ -155,10 +171,19 @@ export function freshness(provenance: BitgetProvenance): string {
     // A clock disagreement, not a prediction. Say the plain thing.
     return 'Observation time disagrees with our clock; treat the age as unknown.'
   }
+
   const minutes = Math.round(delaySeconds / 60)
   if (minutes < 1) return 'Observed less than a minute before it was read.'
   if (minutes === 1) return 'Observed 1 minute before it was read.'
-  return `Observed ${minutes} minutes before it was read.`
+  if (minutes < 90) return `Observed ${minutes} minutes before it was read.`
+
+  // Rounded to one decimal before the comparison: 47.97 hours reads as 48.0,
+  // which belongs in days rather than at the top of the hours range.
+  const hours = Math.round(delaySeconds / 360) / 10
+  if (hours < 48) return `Observed ${hours.toFixed(1)} hours before it was read.`
+
+  const days = Math.round(delaySeconds / 8_640) / 10
+  return `Observed ${days.toFixed(1)} days before it was read.`
 }
 
 /**
