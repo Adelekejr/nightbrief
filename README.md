@@ -24,6 +24,20 @@ Nightbrief answers one question:
 > A macro or news event happened while US markets were closed. What does it mean
 > for the tokenized stocks I hold?
 
+## Built for the hours humans sleep
+
+Nightbrief is an overnight, read-only AI research desk for tokenized US stocks.
+It works for the hours humans sleep: gathering breaking evidence, identifying
+affected holdings, retrieving Bitget market context, and preparing a traceable
+Brief for a human decision-maker before the next session.
+
+The work is agentic; the decision is not. Nightbrief retrieves evidence and
+labels inference; it does not place trades, claim that an underlying US share
+price is the rToken price, or pretend to know what the data cannot establish.
+A person reads the Brief and decides.
+
+> Built for the hours humans sleep. Before they trade, Nightbrief shows its work.
+
 ## Who this is for
 
 A retail or semi-professional trader in an African or Asian timezone who holds
@@ -308,9 +322,10 @@ was treated as a closed door rather than something to work around.
 
 **Market context — delayed, dated, and attributed to its origin.** A Brief can
 also show where the underlying share was trading, from Bitget's keyless agent
-MCP endpoint. Three things about it were measured rather than assumed, and all
-three are enforced in `lib/providers/bitget-mcp.ts` rather than left to whoever
-writes the interface:
+MCP endpoint. The integration is **read-only**: one catalog entry, one quote,
+no account authorization, no credentials, no orders. Three things about it were
+measured rather than assumed, and all three are enforced in
+`lib/providers/bitget-mcp.ts` rather than left to whoever writes the interface:
 
 - **It is never current, and how stale it is depends on the clock.** Inside the
   US session it is an IEX quote delayed about fifteen minutes — measured twice
@@ -326,6 +341,11 @@ writes the interface:
   syndicated news: `via Bitget, sourced from IEX`.
 - **A session is mandatory**, so each cold call costs a handshake and then the
   query. The timeout budget is built for two round trips.
+
+- **It settles nothing about the token.** The figure is the US-listed share, not
+  the rToken, and it establishes neither the rToken's price nor the outcome of
+  any trade. That sentence is a field on every record rather than a line the
+  interface is trusted to remember, so removing it would mean deleting data.
 
 It is fetched for one holding, when a Brief is opened — never for the whole
 portfolio and never on page load. Yahoo still serves the last close, separately
@@ -553,6 +573,27 @@ files in the output either way — which is the part that matters, since nothing
 fetching a social image will execute the app to get one. The browser checks
 fetch all three out of the served build and read their bytes, because a social
 image that 404s renders as a blank card rather than as an error.
+
+## Hackathon fit
+
+Nightbrief is built for the Bitget AI Hackathon S2 direction on agentic
+infrastructure for tokenized US stocks, and it takes the "agent for the hours
+humans sleep" theme literally. The US close lands at 21:00 in Lagos. The desk
+exists for what happens between then and the next open.
+
+What the agent does unattended: reads the news sources and the per-ticker
+feeds, ranks what broke against holdings the reader named, keeps named matches
+and model-inferred links in separate layers, retrieves read-only market context
+for the underlying share from Bitget's agent MCP endpoint, and assembles a Brief
+in which every claim has been checked back against a supplied source before
+anyone sees it.
+
+What it deliberately does not do: authorize a Bitget account, hold exchange
+credentials, place an order, or recommend a trade. There is no Agentic account
+authorization in this project and no execution path of any kind. The read-only
+boundary is a design decision, not an unfinished feature — the agent's job is to
+have the research ready and the reasoning checkable by the time a human wakes up
+and decides.
 
 ## Submission verification
 
