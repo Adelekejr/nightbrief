@@ -312,11 +312,15 @@ MCP endpoint. Three things about it were measured rather than assumed, and all
 three are enforced in `lib/providers/bitget-mcp.ts` rather than left to whoever
 writes the interface:
 
-- **It is delayed by about fifteen minutes.** Measured twice at exactly that,
-  during market hours, and the payload names its own upstream as IEX. So the
-  words "live" and "real-time" appear nowhere on that path, and the sentence
-  stating the value's age is composed from the payload's own timestamp — never
-  from the time we asked.
+- **It is never current, and how stale it is depends on the clock.** Inside the
+  US session it is an IEX quote delayed about fifteen minutes — measured twice
+  at exactly that. Once the session closes it is simply the last print of that
+  session, so its age keeps growing: forty minutes shortly after the close,
+  hours by the middle of the night. **That older case is the normal one here**,
+  because this tool is read while New York is shut. So the words "live" and
+  "real-time" appear nowhere on that path, and the age is computed per reading
+  from the payload's own timestamp rather than assumed — never from the time we
+  asked.
 - **Bitget is not the source.** The payload carries `provider: "massive"` and
   `source: "iex"`; Bitget served it. Attribution follows the same rule as
   syndicated news: `via Bitget, sourced from IEX`.

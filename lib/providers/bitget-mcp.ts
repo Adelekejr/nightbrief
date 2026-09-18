@@ -10,12 +10,16 @@
  * here rather than remembered by whoever writes the interface. They are in
  * `docs/bitget-mcp-notes.md` with the evidence.
  *
- *   1. THE QUOTE IS DELAYED. Twice measured at exactly fifteen minutes during
- *      market hours, and the payload names its own upstream as IEX. So the
- *      word "live" and the phrase "real-time" do not appear in this file, and
- *      `freshness()` is the only place allowed to describe recency — it reads
- *      the payload's own timestamp and says how old the value was when it
- *      arrived, or says the age is unknown.
+ *   1. THE QUOTE IS NEVER CURRENT, and how stale it is depends on the clock.
+ *      In-session it is an IEX feed delayed about fifteen minutes, measured
+ *      twice at exactly that. Once the market shuts it is simply the last print
+ *      of that session and its age keeps growing — forty minutes just after the
+ *      close, hours overnight — which is the ordinary case for a tool read
+ *      while New York is shut. So the word "live" and the phrase "real-time" do
+ *      not appear in this file, and `freshness()` is the only place allowed to
+ *      describe recency: it computes the age per reading from the payload's own
+ *      timestamp, or says the age is unknown. Hard-coding the fifteen minutes
+ *      would have printed a falsehood every night.
  *
  *   2. BITGET IS NOT THE SOURCE. The payload carries `provider: "massive"`
  *      and `source: "iex"`; Bitget is the endpoint that served it. Attribution
@@ -49,10 +53,10 @@ const TOTAL_BUDGET_MS = 6_000
 const CALL_TIMEOUT_MS = 3_500
 
 /**
- * The value is already a quarter of an hour old, so re-fetching it inside a
- * minute buys nothing and spends an unpublished rate budget. Phase 1 saw no
- * `x-ratelimit-*` header of any kind, which means the ceiling is unknown
- * rather than generous.
+ * The value is a quarter of an hour behind at best and a whole session behind
+ * at worst, so re-fetching it inside a minute buys nothing and spends an
+ * unpublished rate budget. Phase 1 saw no `x-ratelimit-*` header of any kind,
+ * which means the ceiling is unknown rather than generous.
  */
 const CACHE_TTL_MS = 60_000
 
@@ -87,6 +91,12 @@ export type BitgetProvenance = {
   /**
    * What kind of number this is. Not a close, and not a live quote — a third
    * thing, which is why it needs its own name.
+   *
+   * Accurate in-session. Once the market shuts the value is the last print of
+   * the finished session, which is closer to a close than to a delayed
+   * intraday quote, so the name is loose there. It is an internal
+   * discriminator and is never rendered, so it misleads no reader today; it
+   * would need splitting before anything prints it.
    */
   sourceType: 'delayed-intraday-quote' | 'undated-quote'
   /** Stated on the record so the interface cannot forget to state it. */
